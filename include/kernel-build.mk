@@ -44,7 +44,7 @@ define Download/kernel
 endef
 
 KERNEL_GIT_OPTS:=
-ifneq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
+ifneq ($(qstrip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),)
   KERNEL_GIT_OPTS+=--reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)
 endif
 
