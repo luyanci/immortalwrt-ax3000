@@ -9,6 +9,8 @@ else
   DTS_CPPFLAGS-y += -D__AARCH64__
 endif
 
+DTS_CPPFLAGS-$(CONFIG_ATH11K_MEM_PROFILE_256M) += -DCONFIG_ATH11K_MEM_PROFILE_256M
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS_DIR := ../dts
@@ -47,6 +49,10 @@ define Device/redmi_ax3000
   PAGESIZE := 2048
   DEVICE_DTS_CONFIG := config@mp02.1
   IMAGES := nand-factory.ubi
+  DEVICE_PACKAGES := \
+	ath11k-firmware-ipq5018 \
+	ath11k-firmware-qcn6122 \
+	ipq-wifi-redmi_ax3000
 endef
 TARGET_DEVICES += redmi_ax3000
 
