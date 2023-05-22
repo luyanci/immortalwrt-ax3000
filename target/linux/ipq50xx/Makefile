@@ -27,6 +27,7 @@ DEFAULT_PACKAGES += \
 	kmod-gpio-button-hotplug \
 	uboot-envtools \
 	kmod-qca-nss-dp swconfig \
-	kmod-qca-nss-drv qca-nss-fw-ipq50xx-retail
+	kmod-qca-nss-drv qca-nss-fw-ipq50xx-retail \
+	kmod-ath11k wpad-basic-wolfssl
 
 $(eval $(call BuildTarget))

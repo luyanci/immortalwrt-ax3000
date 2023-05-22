@@ -1,0 +1,685 @@
+From afe11126863dc8ffe88bf64b8b217acbdfb56b32 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Fri, 19 May 2023 14:41:17 +0000
+Subject: [PATCH 1/2] Fix compilation issues
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/dbring.c      |  4 +--
+ drivers/net/wireless/ath/ath11k/debug_nss.c   | 22 +++++++-------
+ drivers/net/wireless/ath/ath11k/debugfs.c     | 30 +++++++++----------
+ drivers/net/wireless/ath/ath11k/debugfs_sta.c |  2 +-
+ drivers/net/wireless/ath/ath11k/dp_rx.c       |  6 ++--
+ drivers/net/wireless/ath/ath11k/dp_tx.c       |  4 +--
+ drivers/net/wireless/ath/ath11k/mac.c         | 19 +++++-------
+ drivers/net/wireless/ath/ath11k/nss.c         | 17 +++++------
+ drivers/net/wireless/ath/ath11k/pci.c         | 10 +++----
+ drivers/net/wireless/ath/ath11k/pci.h         |  2 +-
+ drivers/net/wireless/ath/ath11k/qmi.c         |  2 +-
+ drivers/net/wireless/ath/ath11k/wmi.c         |  9 +++---
+ include/net/mac80211.h                        |  2 +-
+ net/mac80211/debugfs_sta.c                    |  8 ++---
+ net/mac80211/ieee80211_i.h                    |  2 +-
+ net/mac80211/util.c                           |  4 +--
+ 16 files changed, 68 insertions(+), 75 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dbring.c b/drivers/net/wireless/ath/ath11k/dbring.c
+index 67e6a05..f28d48f 100644
+--- a/drivers/net/wireless/ath/ath11k/dbring.c
++++ b/drivers/net/wireless/ath/ath11k/dbring.c
+@@ -283,7 +283,7 @@ int ath11k_dbring_buffer_release_event(struct ath11k_base *ab,
+ 	struct ath11k_dbring_element *buff;
+ 	struct ath11k_dbring_data handler_data;
+ 	struct ath11k_buffer_addr desc;
+-	u8 *vaddr_unalign;
++	void *vaddr_unalign;
+ 	u32 num_entry, num_buff_reaped;
+ 	u8 pdev_idx, rbm, module_id;
+ 	u32 cookie;
+@@ -378,7 +378,7 @@ int ath11k_dbring_buffer_release_event(struct ath11k_base *ab,
+ 			if (status == ATH11K_CORRELATE_STATUS_HOLD)
+ 				continue;
+ 		}
+-		buff->paddr = NULL;
++		buff->paddr = (dma_addr_t) NULL;
+ 		memset(buff->payload, 0, size);
+ 		ath11k_dbring_bufs_replenish(ar, ring, buff, module_id, GFP_ATOMIC);
+ 	}
+diff --git a/drivers/net/wireless/ath/ath11k/debug_nss.c b/drivers/net/wireless/ath/ath11k/debug_nss.c
+index 2aa8891..e3be21d 100644
+--- a/drivers/net/wireless/ath/ath11k/debug_nss.c
++++ b/drivers/net/wireless/ath/ath11k/debug_nss.c
+@@ -254,7 +254,7 @@ static const struct file_operations fops_nss_dump_mpath_table = {
+ };
+ 
+ static ssize_t ath11k_nss_mpath_add(struct file *file,
+-				     char __user *user_buf,
++				     const char __user *user_buf,
+ 				     size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -312,7 +312,7 @@ static const struct file_operations fops_nss_mpath_add = {
+ };
+ 
+ static ssize_t ath11k_nss_mpp_add(struct file *file,
+-				   char __user *user_buf,
++				   const char __user *user_buf,
+ 				   size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -370,7 +370,7 @@ static const struct file_operations fops_nss_mpp_add = {
+ };
+ 
+ static ssize_t ath11k_nss_mpath_update(struct file *file,
+-					char __user *user_buf,
++					const char __user *user_buf,
+ 					size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -436,7 +436,7 @@ static const struct file_operations fops_nss_mpath_update = {
+ };
+ 
+ static ssize_t ath11k_nss_mpp_update(struct file *file,
+-					char __user *user_buf,
++					const char __user *user_buf,
+ 					size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -495,7 +495,7 @@ static const struct file_operations fops_nss_mpp_update = {
+ 
+ 
+ static ssize_t ath11k_nss_mpath_delete(struct file *file,
+-					char __user *user_buf,
++					const char __user *user_buf,
+ 					size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -553,7 +553,7 @@ static const struct file_operations fops_nss_mpath_del = {
+ };
+ 
+ static ssize_t ath11k_nss_mpp_delete(struct file *file,
+-					char __user *user_buf,
++					const char __user *user_buf,
+ 					size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -612,7 +612,7 @@ static const struct file_operations fops_nss_mpp_del = {
+ 
+ 
+ static ssize_t ath11k_nss_assoc_link(struct file *file,
+-				     char __user *user_buf,
++				     const char __user *user_buf,
+ 				     size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -704,7 +704,7 @@ static ssize_t ath11k_nss_read_mpp_mode(struct file *file,
+ }
+ 
+ static ssize_t ath11k_nss_write_mpp_mode(struct file *file,
+-				  char __user *user_buf,
++				  const char __user *user_buf,
+ 				  size_t count, loff_t *ppos)
+ {
+ 	u8 buf[128] = {0};
+@@ -737,7 +737,7 @@ static const struct file_operations fops_nss_mpp_mode = {
+ };
+ 
+ static ssize_t ath11k_nss_write_excep_flags(struct file *file,
+-				  char __user *user_buf,
++				  const char __user *user_buf,
+ 				  size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -776,7 +776,7 @@ static const struct file_operations fops_nss_excep_flags = {
+ };
+ 
+ static ssize_t ath11k_nss_write_metadata_type(struct file *file,
+-				  char __user *user_buf,
++				  const char __user *user_buf,
+ 				  size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -812,7 +812,7 @@ static const struct file_operations fops_nss_metadata_type = {
+ };
+ 
+ static ssize_t ath11k_nss_write_exc_rate_limit(struct file *file,
+-				  char __user *user_buf,
++				  const char __user *user_buf,
+ 				  size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs.c b/drivers/net/wireless/ath/ath11k/debugfs.c
+index 66941ba..8a26c5f 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -278,7 +278,7 @@ static ssize_t ath11k_write_wmi_ctrl_path_stats(struct file *file,
+ 	return ret ? ret : count;
+ }
+ 
+-int wmi_ctrl_path_pdev_stat(struct ath11k_vif *arvif, const char __user *ubuf,
++int wmi_ctrl_path_pdev_stat(struct ath11k_vif *arvif, char __user *ubuf,
+ 			    size_t count, loff_t *ppos)
+ {
+ 	const int size = 2048;
+@@ -352,7 +352,7 @@ int wmi_ctrl_path_pdev_stat(struct ath11k_vif *arvif, const char __user *ubuf,
+ 	return ret_val;
+ }
+ 
+-int wmi_ctrl_path_cal_stat(struct ath11k_vif *arvif, const char __user *ubuf,
++int wmi_ctrl_path_cal_stat(struct ath11k_vif *arvif, char __user *ubuf,
+ 			   size_t count, loff_t *ppos)
+ {
+ 	const int size = 4096;
+@@ -422,7 +422,7 @@ int wmi_ctrl_path_cal_stat(struct ath11k_vif *arvif, const char __user *ubuf,
+ }
+ 
+ static ssize_t ath11k_read_wmi_ctrl_path_stats(struct file *file,
+-		const char __user *ubuf,
++		char __user *ubuf,
+ 		size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_vif *arvif = file->private_data;
+@@ -1651,7 +1651,7 @@ static const struct file_operations fops_soc_stats_disable = {
+ };
+ 
+ static ssize_t ath11k_debug_write_fw_recovery(struct file *file,
+-                                              char __user *user_buf,
++                                              const char __user *user_buf,
+                                               size_t count, loff_t *ppos)
+ {
+        struct ath11k_base *ab = file->private_data;
+@@ -1733,7 +1733,7 @@ ath11k_debug_read_enable_memory_stats(struct file *file,
+ 
+ static ssize_t
+ ath11k_debug_write_enable_memory_stats(struct file *file,
+-				       char __user *ubuf,
++				       const char __user *ubuf,
+ 				       size_t count, loff_t *ppos)
+ {
+ 	struct ath11k_base *ab = file->private_data;
+@@ -1949,7 +1949,7 @@ static ssize_t ath11k_write_fw_dbglog(struct file *file,
+ 	ab->fw_dbglog_val = value;
+ 	ret = ath11k_wmi_dbglog_cfg(ar, param, value);
+ 	if (ret) {
+-		ath11k_warn(ar, "dbglog cfg failed from debugfs: %d\n",
++		ath11k_warn(ab, "dbglog cfg failed from debugfs: %d\n",
+ 			    ret);
+ 		goto out;
+ 	}
+@@ -2692,7 +2692,7 @@ static ssize_t ath11k_write_ps_state_enable(struct file *file,
+ 	param = WMI_PDEV_PEER_STA_PS_STATECHG_ENABLE;
+ 	ret = ath11k_wmi_pdev_set_param(ar, param, ps_state_enable, pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "failed to enable ps_state_enable: %d\n",
++		ath11k_warn(ar->ab, "failed to enable ps_state_enable: %d\n",
+ 			    ret);
+ 		goto exit;
+ 	}
+@@ -3928,7 +3928,7 @@ static ssize_t ath11k_write_ani_enable(struct file *file,
+ 	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_ENABLE,
+ 					enable, ar->pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "ani_enable failed from debugfs: %d\n", ret);
++		ath11k_warn(ar->ab, "ani_enable failed from debugfs: %d\n", ret);
+ 		goto exit;
+ 	}
+ 	ar->ani_enabled = enable;
+@@ -3978,7 +3978,7 @@ static ssize_t ath11k_write_ani_poll_period(struct file *file,
+ 	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_POLL_PERIOD,
+ 			ani_poll_period, ar->pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "ani poll period write failed in debugfs: %d\n", ret);
++		ath11k_warn(ar->ab, "ani poll period write failed in debugfs: %d\n", ret);
+ 		goto exit;
+ 	}
+ 	ar->ab->ani_poll_period = ani_poll_period;
+@@ -4028,7 +4028,7 @@ static ssize_t ath11k_write_ani_listen_period(struct file *file,
+ 	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_LISTEN_PERIOD,
+ 					ani_listen_period, ar->pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "ani listen period write failed in debugfs: %d\n", ret);
++		ath11k_warn(ar->ab, "ani listen period write failed in debugfs: %d\n", ret);
+ 		goto exit;
+ 	}
+ 	ar->ab->ani_listen_period = ani_listen_period;
+@@ -4059,7 +4059,7 @@ static int ath11k_debug_get_ani_level(struct ath11k *ar)
+ 	ret = ath11k_wmi_pdev_get_ani_level(ar, WMI_PDEV_GET_ANI_OFDM_CONFIG_CMDID,
+ 					    ar->pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "failed to request ofdm ani level: %d\n", ret);
++		ath11k_warn(ar->ab, "failed to request ofdm ani level: %d\n", ret);
+ 		return ret;
+ 	}
+ 	time_left = wait_for_completion_timeout(&ar->ab->ani_ofdm_event, 1 * HZ);
+@@ -4071,7 +4071,7 @@ static int ath11k_debug_get_ani_level(struct ath11k *ar)
+ 		ret = ath11k_wmi_pdev_get_ani_level(ar, WMI_PDEV_GET_ANI_CCK_CONFIG_CMDID,
+ 						    ar->pdev->pdev_id);
+ 		if (ret) {
+-			ath11k_warn(ar, "failed to request cck ani level: %d\n", ret);
++			ath11k_warn(ar->ab, "failed to request cck ani level: %d\n", ret);
+ 			return ret;
+ 		}
+ 		time_left = wait_for_completion_timeout(&ar->ab->ani_cck_event, 1 * HZ);
+@@ -4100,7 +4100,7 @@ static ssize_t ath11k_read_ani_level(struct file *file, char __user *user_buf,
+ 	} else {
+ 		ret = ath11k_debug_get_ani_level(ar);
+ 		if (ret) {
+-			ath11k_warn(ar, "failed to request ani level: %d\n", ret);
++			ath11k_warn(ar->ab, "failed to request ani level: %d\n", ret);
+ 			goto unlock;
+ 		}
+ 		len += scnprintf(buf, sizeof(buf), "ofdm level %d cck level %d\n",
+@@ -4165,7 +4165,7 @@ static ssize_t ath11k_write_ani_level(struct file *file,
+ 
+ 	ret = ath11k_wmi_pdev_set_param(ar, ofdm_param, ofdm_level, ar->pdev->pdev_id);
+ 	if (ret) {
+-		ath11k_warn(ar, "failed to set ANI ofdm level :%d\n", ret);
++		ath11k_warn(ar->ab, "failed to set ANI ofdm level :%d\n", ret);
+ 		goto exit;
+ 	}
+ 
+@@ -4173,7 +4173,7 @@ static ssize_t ath11k_write_ani_level(struct file *file,
+ 		ret = ath11k_wmi_pdev_set_param(ar, cck_param, cck_level,
+ 						ar->pdev->pdev_id);
+ 		if (ret) {
+-			ath11k_warn(ar, "failed to set ANI cck level :%d\n", ret);
++			ath11k_warn(ar->ab, "failed to set ANI cck level :%d\n", ret);
+ 			goto exit;
+ 		}
+ 	}
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs_sta.c b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+index 851a52a..e52973a 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+@@ -1200,7 +1200,7 @@ static const struct file_operations fops_total_ps_duration = {
+ 
+ static ssize_t
+ ath11k_dbg_sta_dump_driver_tx_pkts_flow(struct file *file,
+-					const char __user *user_buf,
++					char __user *user_buf,
+ 					size_t count, loff_t *ppos)
+ {
+ 	struct ieee80211_sta *sta = file->private_data;
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 5f12c6c..f67d0af 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -323,7 +323,7 @@ static inline bool ath11k_dp_rxdesc_mac_addr2_valid(struct ath11k_base *ab,
+ 	return ab->hw_params.hw_ops->rx_desc_mac_addr2_valid(desc);
+ }
+ 
+-static inline u8* ath11k_dp_rxdesc_get_mpdu_start_addr2(struct ath11k_base *ab,
++static inline void* ath11k_dp_rxdesc_get_mpdu_start_addr2(struct ath11k_base *ab,
+ 					struct hal_rx_desc *desc)
+ {
+ 	return ab->hw_params.hw_ops->rx_desc_mpdu_start_addr2;
+@@ -1487,7 +1487,7 @@ static int ath11k_htt_tlv_ppdu_soc_stats_parse(struct ath11k_base *ab,
+ 				    len, tag);
+ 			return -EINVAL;
+ 		}
+-		ath11k_dp_ppdu_stats_flush_tlv_parse(ab, ptr);
++		ath11k_dp_ppdu_stats_flush_tlv_parse(ab, (struct htt_ppdu_stats_cmpltn_flush *) ptr);
+ 		break;
+ 	default:
+ 		break;
+@@ -3750,7 +3750,7 @@ ath11k_dp_rx_mon_update_status_buf_state(struct ath11k_mon_data *pmon,
+ 					 struct hal_tlv_hdr *tlv)
+ {
+ 	u16 ppdu_id_diff, ppdu_id, tlv_len;
+-	u8 *ptr = tlv;
++	void *ptr = tlv;
+ 
+ 	tlv_len = FIELD_GET(HAL_TLV_HDR_LEN, tlv->tl);
+ 	ptr += sizeof(*tlv) + tlv_len;
+diff --git a/drivers/net/wireless/ath/ath11k/dp_tx.c b/drivers/net/wireless/ath/ath11k/dp_tx.c
+index e5de230..4a442ef 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -688,7 +688,7 @@ static inline bool ath11k_dp_tx_completion_valid(struct hal_wbm_release_ring *de
+ 
+ 	if (FIELD_GET(HAL_WBM_RELEASE_INFO0_REL_SRC_MODULE, desc->info0) ==
+ 	    HAL_WBM_REL_SRC_MODULE_FW) {
+-		status_desc = ((u8 *)desc) + HTT_TX_WBM_COMP_STATUS_OFFSET;
++		status_desc = (void *) desc + HTT_TX_WBM_COMP_STATUS_OFFSET;
+ 
+ 		/* Dont consider HTT_TX_COMP_STATUS_MEC_NOTIFY */
+ 		if (FIELD_GET(HTT_TX_WBM_COMP_INFO0_STATUS, status_desc->info0) ==
+@@ -727,7 +727,7 @@ void ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id)
+ 	ath11k_hal_srng_dst_invalidate_entry(ab, status_ring, valid_entries);
+ 
+ 	while ((desc = ath11k_hal_srng_dst_get_next_cache_entry(ab, status_ring))) {
+-		if (!ath11k_dp_tx_completion_valid(desc))
++		if (!ath11k_dp_tx_completion_valid((struct hal_wbm_release_ring *) desc))
+ 			continue;
+ 
+ 		memcpy(&tx_ring->tx_status[count],
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 2f27aa7..8b19885 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1279,7 +1279,7 @@ static void ath11k_mac_set_dtim_count(struct sk_buff *bcn, u8 *vdev_up_list)
+ 	ies += sizeof(mgmt->u.beacon);
+ 	ies_len = skb_tail_pointer(bcn) - ies;
+ 
+-	ies = cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, ies, ies_len);
++	ies = (u8 *) cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, ies, ies_len);
+ 	while (ies) {
+ 		ies_len -= (2 + ies[1]);
+ 		profile_len = ies[1] - 1;
+@@ -1297,7 +1297,7 @@ static void ath11k_mac_set_dtim_count(struct sk_buff *bcn, u8 *vdev_up_list)
+ 			profile = next_profile;
+ 		}
+ 
+-		ies = cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, profile, ies_len);
++		ies = (u8 *) cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, profile, ies_len);
+ 	}
+ }
+ 
+@@ -6292,7 +6292,7 @@ static void ath11k_mac_op_tx(struct ieee80211_hw *hw,
+ 		ret = ath11k_nss_tx(arvif, skb);
+ 	else
+ 		ret = ath11k_dp_tx(ar, arvif, skb,
+-				   (control->sta) ? control->sta->drv_priv : NULL);
++				   (control->sta) ? ((struct ath11k_sta *) control->sta->drv_priv) : NULL);
+ 	if (unlikely(ret)) {
+ 		if (!ar->ab->nss.enabled && ret != -ENOSPC && ret != -ENOMEM)
+ 			ath11k_warn(ar->ab, "failed to transmit frame %d\n", ret);
+@@ -6588,8 +6588,8 @@ ath11k_mac_setup_vdev_create_params(struct ath11k_vif *arvif,
+ 	return 0;
+ }
+ 
+-static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+-					     struct ieee80211_vif *vif)
++static void ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
++					      struct ieee80211_vif *vif)
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_base *ab = ar->ab;
+@@ -6598,7 +6598,7 @@ static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 	int ret;
+ 
+ 	if (ab->nss.enabled && vif->type == NL80211_IFTYPE_AP_VLAN)
+-		return 0;
++		return;
+ 
+ 	param_id = WMI_VDEV_PARAM_TX_ENCAP_TYPE;
+ 	if (ath11k_frame_mode != ATH11K_HW_TXRX_ETHERNET ||
+@@ -6637,7 +6637,6 @@ static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 			    arvif->vdev_id, ret);
+ 		vif->offload_flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
+ 	}
+-	return ret;
+ }
+ 
+ static int ath11k_mac_vdev_delete(struct ath11k *ar, struct ath11k_vif *arvif)
+@@ -6829,11 +6828,7 @@ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+                 goto  err_vdev_del;
+         }
+ 
+-	ret = ath11k_mac_op_update_vif_offload(hw, vif);
+-	if (ret) {
+-		ath11k_warn(ab, "failed to update vif offload\n");
+-		goto err_vdev_del;
+-	}
++	ath11k_mac_op_update_vif_offload(hw, vif);
+ 
+ 	if (vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
+ 		param_value = ATH11K_HW_TXRX_ETHERNET;
+diff --git a/drivers/net/wireless/ath/ath11k/nss.c b/drivers/net/wireless/ath/ath11k/nss.c
+index cca6109..9ebbd90 100644
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -1024,7 +1024,7 @@ void ath11k_nss_mesh_wifili_event_receive(void *app_data,
+ 	}
+ }
+ 
+-static void nss_mesh_convert_path_flags(u16 *dest, u16 *src, bool to_nss)
++static void nss_mesh_convert_path_flags(u8 *dest, u8 *src, bool to_nss)
+ {
+ 	if (to_nss) {
+ 		if (*src & IEEE80211_MESH_PATH_ACTIVE)
+@@ -1345,9 +1345,10 @@ int ath11k_nss_exc_rate_config(struct ath11k_vif *arvif,
+ 	return ret;
+ }
+ 
+-static void ath11k_nss_mesh_obj_vdev_event_receive(struct net_device *dev,
+-						   struct nss_wifi_mesh_msg *msg)
++static void ath11k_nss_mesh_obj_vdev_event_receive(void *dev,
++						   struct nss_cmn_msg *cmn_msg)
+ {
++	struct nss_wifi_mesh_msg *msg = (struct nss_wifi_mesh_msg *) cmn_msg;
+ 	struct ath11k_base *ab;
+ 	struct ath11k_vif *arvif;
+ 	int ret;
+@@ -1801,7 +1802,7 @@ int ath11k_nss_dump_mpp_request(struct ath11k_vif *arvif)
+ 	return 0;
+ }
+ 
+-int ath11k_nss_mpp_timer_cb(struct timer_list *timer)
++void ath11k_nss_mpp_timer_cb(struct timer_list *timer)
+ {
+ 	nss_wifi_mesh_msg_callback_t msg_cb;
+ 	struct arvif_nss *nss = from_timer(nss, timer,mpp_expiry_timer);
+@@ -1823,8 +1824,6 @@ int ath11k_nss_mpp_timer_cb(struct timer_list *timer)
+ 
+ 	mod_timer(&nss->mpp_expiry_timer,
+ 		 jiffies + msecs_to_jiffies(ATH11K_MPP_EXPIRY_TIMER_INTERVAL_MS));
+-
+-	return 0;
+ }
+ 
+ static void
+@@ -1933,7 +1932,7 @@ ath11k_nss_mesh_obj_ext_data_callback(struct net_device *dev, struct sk_buff *sk
+ }
+ 
+ static void
+-ath11k_nss_mesh_link_vdev_data_receive(void *dev,
++ath11k_nss_mesh_link_vdev_data_receive(struct net_device *dev,
+ 				       struct sk_buff *skb,
+ 				       struct napi_struct *napi)
+ {
+@@ -1962,7 +1961,7 @@ ath11k_nss_mesh_link_vdev_data_receive(void *dev,
+ }
+ 
+ static void
+-ath11k_nss_mesh_link_vdev_special_data_receive(void *dev,
++ath11k_nss_mesh_link_vdev_special_data_receive(struct net_device *dev,
+ 				struct sk_buff *skb,
+ 				__attribute__((unused)) struct napi_struct *napi)
+ {
+@@ -2853,7 +2852,7 @@ int ath11k_nss_ext_vdev_cfg_wds_peer(struct ath11k_vif *arvif,
+ 
+ 	cfg_wds_msg = &ext_vdev_msg->msg.wmsg;
+ 	cfg_wds_msg->wds_peer_id = wds_peer_id;
+-	ether_addr_copy(cfg_wds_msg->mac_addr, wds_addr);
++	ether_addr_copy((u8 *) cfg_wds_msg->mac_addr, wds_addr);
+ 
+ 	nss_wifi_ext_vdev_msg_init(ext_vdev_msg, arvif->nss.if_num,
+ 				   NSS_WIFI_EXT_VDEV_MSG_CONFIGURE_WDS,
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 813fc6c..099c0ed 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -469,7 +469,7 @@ void ath11k_pci_get_qgic_msi_address(struct ath11k_base *ab, u32 *msi_addr_lo,
+ EXPORT_SYMBOL(ath11k_pci_get_qgic_msi_address);
+ 
+ int ath11k_pci_get_user_msi_assignment(struct ath11k_base *ab,
+-				       struct ath11k_msi_config *msi_config,
++				       const struct ath11k_msi_config *msi_config,
+ 				       u32 msi_ep_base_data, char *user_name,
+ 				       int *num_vectors, u32 *user_base_data,
+ 				       u32 *base_vector)
+@@ -532,7 +532,7 @@ int ath11k_get_user_qgic_msi_assignment(struct ath11k_base *ab, char *user_name,
+ 					u32 *base_vector)
+ {
+ 	struct qgic2_msi *qgic2_msi = ab->ipci.qgic2_msi;
+-	struct ath11k_msi_config *msi_cfg = ab->ipci.msi_cfg;
++	const struct ath11k_msi_config *msi_cfg = ab->ipci.msi_cfg;
+ 
+ 	return ath11k_pci_get_user_msi_assignment(ab, msi_cfg,
+ 						  qgic2_msi->msi_gicm_base, user_name,
+@@ -774,7 +774,7 @@ static int ath11k_pci_get_domain_id(struct ath11k_base *ab)
+ }
+ 
+ static int ath11k_pci_ext_irq_config(struct ath11k_base *ab,
+-				     struct ath11k_msi_config *msi_config,
++				     const struct ath11k_msi_config *msi_config,
+ 				     u32 msi_ep_base_data)
+ {
+ 	int i, j, ret, num_vectors = 0;
+@@ -846,7 +846,7 @@ static int ath11k_pci_ext_irq_config(struct ath11k_base *ab,
+ }
+ 
+ static int ath11k_config_msi_irq(struct ath11k_base *ab,
+-				 struct ath11k_msi_config *msi_config, u32 msi_ep_base_data)
++				 const struct ath11k_msi_config *msi_config, u32 msi_ep_base_data)
+ {
+ 	struct ath11k_ce_pipe *ce_pipe;
+ 	u32 msi_data_start;
+@@ -1291,7 +1291,7 @@ int ath11k_pci_config_qgic_msi_irq(struct ath11k_base *ab)
+ {
+ 	int ret = 0;
+ 	struct qgic2_msi *qgic2_msi = ab->ipci.qgic2_msi;
+-	struct ath11k_msi_config *msi_cfg = ab->ipci.msi_cfg;
++	const struct ath11k_msi_config *msi_cfg = ab->ipci.msi_cfg;
+ 
+ 	ret = ath11k_config_msi_irq(ab, msi_cfg,
+ 				    qgic2_msi->msi_gicm_base);
+diff --git a/drivers/net/wireless/ath/ath11k/pci.h b/drivers/net/wireless/ath/ath11k/pci.h
+index 5cd3ff0..0646036 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.h
++++ b/drivers/net/wireless/ath/ath11k/pci.h
+@@ -162,7 +162,7 @@ static inline struct ath11k_pci *ath11k_pci_priv(struct ath11k_base *ab)
+ }
+ 
+ int ath11k_pci_get_user_msi_assignment(struct ath11k_base *ab,
+-				       struct ath11k_msi_config *msi_config,
++				       const struct ath11k_msi_config *msi_config,
+ 				       u32 msi_ep_base_data, char *user_name,
+ 				       int *num_vectors, u32 *user_base_data,
+ 				       u32 *base_vector);
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index f9a8f96..53b8c77 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -3167,7 +3167,7 @@ static int ath11k_qmi_load_bdf_qmi(struct ath11k_base *ab)
+ 	const struct firmware *fw_entry;
+ 	struct ath11k_board_data bd;
+ 	u32 fw_size, file_type;
+-	u8 *tmp;
++	const u8 *tmp;
+ 	int ret = 0;
+ 
+ 	memset(&bd, 0, sizeof(bd));
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 17eea60..b3e534e 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5721,10 +5721,9 @@ static int ath11k_pull_reg_chan_list_ext_update_ev(struct ath11k_base *ab,
+ 		   num_6g_reg_rules_client[WMI_REG_STANDARD_POWER_AP][WMI_REG_SUBORDINATE_CLIENT],
+ 		   num_6g_reg_rules_client[WMI_REG_VERY_LOW_POWER_AP][WMI_REG_SUBORDINATE_CLIENT]);
+ 
+-	ext_wmi_reg_rule =
+-		(struct wmi_regulatory_rule_ext_struct *)((u8 *)ext_chan_list_event_hdr
+-							  + sizeof(*ext_chan_list_event_hdr)
+-							  + sizeof(struct wmi_tlv));
++	ext_wmi_reg_rule = (void *) ext_chan_list_event_hdr
++			 + sizeof(*ext_chan_list_event_hdr)
++			 + sizeof(struct wmi_tlv);
+ 
+ 	if (num_2g_reg_rules) {
+ 		reg_info->reg_rules_2g_ptr = create_ext_reg_rules_from_wmi(num_2g_reg_rules,
+@@ -9404,7 +9403,7 @@ int ath11k_wmi_dbglog_cfg(struct ath11k *ar, u32 param, u64 value)
+ 			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
+ 	cmd->dbg_log_param = param;
+ 
+-	tlv = (u8 *) cmd + sizeof(*cmd);
++	tlv = (void *) cmd + sizeof(*cmd);
+ 	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_UINT32) |
+ 		      FIELD_PREP(WMI_TLV_LEN, sizeof(u32));
+ 
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index b547e44..d9d6345 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -7075,7 +7075,7 @@ struct ieee80211_mesh_path_offld {
+ 	u32 metric;
+ 	unsigned long exp_time;
+ 	u8 hop_count;
+-	u16 flags; /* See &enum ieee80211_mesh_path_flags */
++	u8 flags; /* See &enum ieee80211_mesh_path_flags */
+ 	u8 mesh_gate;
+ 	u8 block_mesh_fwd;
+ 	u8 metadata_type;
+diff --git a/net/mac80211/debugfs_sta.c b/net/mac80211/debugfs_sta.c
+index 8e656ea..e4ff996 100644
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -1052,7 +1052,7 @@ sta_reset_mac80211_tx_pkts_flow_write(struct file *file,
+ 				      size_t count, loff_t *ppos)
+ {
+ 	struct sta_info *sta = file->private_data;
+-	u32 tx_stats_reset;
++	unsigned long tx_stats_reset;
+ 	int ret;
+ 	char _buf[2] = {}, *buf = _buf;
+ 
+@@ -1063,7 +1063,7 @@ sta_reset_mac80211_tx_pkts_flow_write(struct file *file,
+ 		return -EFAULT;
+ 
+ 	buf[sizeof(_buf) - 1] = '\0';
+-	if (sscanf(buf, "%u", &tx_stats_reset) != 1)
++	if (sscanf(buf, "%lu", &tx_stats_reset) != 1)
+ 		return -EINVAL;
+ 
+ 	ret = kstrtoul(buf, 0, &tx_stats_reset);
+@@ -1102,7 +1102,7 @@ sta_reset_mac80211_rx_pkts_flow_write(struct file *file,
+ 				      size_t count, loff_t *ppos)
+ {
+ 	struct sta_info *sta = file->private_data;
+-	u32 rx_stats_reset;
++	unsigned long rx_stats_reset;
+ 	int ret;
+ 	char _buf[2] = {}, *buf = _buf;
+ 
+@@ -1113,7 +1113,7 @@ sta_reset_mac80211_rx_pkts_flow_write(struct file *file,
+ 		return -EFAULT;
+ 
+ 	buf[sizeof(_buf) - 1] = '\0';
+-	if (sscanf(buf, "%u", &rx_stats_reset) != 1)
++	if (sscanf(buf, "%lu", &rx_stats_reset) != 1)
+ 		return -EINVAL;
+ 
+ 	ret = kstrtoul(buf, 0, &rx_stats_reset);
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 4cc6d22..b14256c 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2175,7 +2175,7 @@ void ieee80211_txq_remove_vlan(struct ieee80211_local *local,
+ 			       struct ieee80211_sub_if_data *sdata);
+ void ieee80211_fill_txq_stats(struct cfg80211_txq_stats *txqstats,
+ 			      struct txq_info *txqi);
+-void ieee80211_wake_txqs(unsigned long data);
++void ieee80211_wake_txqs(struct tasklet_struct *data);
+ void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
+ 			 u16 transaction, u16 auth_alg, u16 status,
+ 			 const u8 *extra, size_t extra_len, const u8 *bssid,
+diff --git a/net/mac80211/util.c b/net/mac80211/util.c
+index 592a7f3..afbd3e2 100644
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -350,9 +350,9 @@ out:
+ 	local_bh_enable();
+ }
+ 
+-void ieee80211_wake_txqs(unsigned long data)
++void ieee80211_wake_txqs(struct tasklet_struct *t)
+ {
+-	struct ieee80211_local *local = (struct ieee80211_local *)data;
++	struct ieee80211_local *local = from_tasklet(local, t, wake_txqs_tasklet);
+ 	struct ieee80211_sub_if_data *sdata;
+ 	int n_acs = IEEE80211_NUM_ACS;
+ 	unsigned long flags;
+-- 
+2.25.1
+

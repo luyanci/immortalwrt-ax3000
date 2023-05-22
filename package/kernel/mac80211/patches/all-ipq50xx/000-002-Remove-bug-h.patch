@@ -1,0 +1,18 @@
+Remove "bug.h"
+
+---
+ backport-include/linux/kernel.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/backport-include/linux/kernel.h b/backport-include/linux/kernel.h
+index 36bb755..dba97a2 100644
+--- a/backport-include/linux/kernel.h
++++ b/backport-include/linux/kernel.h
+@@ -2,7 +2,6 @@
+ #define __BACKPORT_KERNEL_H
+ #include_next <linux/kernel.h>
+ /* needed to include BUILD_BUG_ON_ZERO on <= 4.12 */
+-#include <linux/bug.h>
+ #include <linux/version.h>
+ 
+ 

@@ -1,0 +1,24 @@
+From 55b2fb54a7331a9972ca9c42bd1a66b493ee4824 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Thu, 15 Dec 2022 10:07:00 +0000
+Subject: [PATCH 1/1] wifi_meshmgr: Add missing `linux/etherdevice.h`
+
+---
+ wifi_meshmgr/nss_wifi_meshmgr.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/wifi_meshmgr/nss_wifi_meshmgr.c b/wifi_meshmgr/nss_wifi_meshmgr.c
+index 101ecfd..22dcac4 100644
+--- a/wifi_meshmgr/nss_wifi_meshmgr.c
++++ b/wifi_meshmgr/nss_wifi_meshmgr.c
+@@ -21,6 +21,7 @@
+  *	NSS to HLOS WiFi-Mesh manager
+  */
+ 
++#include <linux/etherdevice.h>
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/of.h>
+-- 
+2.25.1
+

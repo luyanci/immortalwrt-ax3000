@@ -1,0 +1,93 @@
+From 3fa1572a34eb698e773d3ba1494e81b131da43ac Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date: Sun, 1 Mar 2020 23:03:05 -0800
+Subject: [PATCH 5/5] net: qrtr: Fix FIXME related to qrtr_ns_init()
+
+The 2 second delay before calling qrtr_ns_init() meant that the remote
+processors would register as endpoints in qrtr and the say_hello() call
+would therefor broadcast the outgoing HELLO to them. With the HELLO
+handshake corrected this delay is no longer needed.
+
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Tested-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+(cherry picked from commit 71046abfffe9d34ae90c82cf9c8e44355c2e114c)
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ net/qrtr/ns.c   |  2 +-
+ net/qrtr/qrtr.c | 10 +---------
+ net/qrtr/qrtr.h |  2 +-
+ 3 files changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/net/qrtr/ns.c b/net/qrtr/ns.c
+index 43dfb55fdd7c2..931dda32a825f 100644
+--- a/net/qrtr/ns.c
++++ b/net/qrtr/ns.c
+@@ -693,7 +693,7 @@ static void qrtr_ns_data_ready(struct sock *sk)
+ 	queue_work(qrtr_ns.workqueue, &qrtr_ns.work);
+ }
+ 
+-void qrtr_ns_init(struct work_struct *work)
++void qrtr_ns_init(void)
+ {
+ 	struct sockaddr_qrtr sq;
+ 	int sl = sizeof(sq);
+diff --git a/net/qrtr/qrtr.c b/net/qrtr/qrtr.c
+index 3912a4ae337bd..21ed18aa3fdc6 100644
+--- a/net/qrtr/qrtr.c
++++ b/net/qrtr/qrtr.c
+@@ -18,7 +18,6 @@
+ #include <linux/qrtr.h>
+ #include <linux/termios.h>	/* For TIOCINQ/OUTQ */
+ #include <linux/wait.h>
+-#include <linux/workqueue.h>
+ #include <linux/rwsem.h>
+ #include <linux/ipc_logging.h>
+ #include <linux/signal.h>
+@@ -159,8 +158,6 @@ static DECLARE_RWSEM(qrtr_node_lock);
+ static DEFINE_IDR(qrtr_ports);
+ static DEFINE_MUTEX(qrtr_port_lock);
+ 
+-static struct delayed_work qrtr_ns_work;
+-
+ /**
+  * struct qrtr_node - endpoint node
+  * @ep_lock: lock for endpoint management and callbacks
+@@ -1953,11 +1950,7 @@ static int __init qrtr_proto_init(void)
+ 		return rc;
+ 	}
+ 
+-	/* FIXME: Currently, this 2s delay is required to catch the NEW_SERVER
+-	 * messages from routers. But the fix could be somewhere else.
+-	 */
+-	INIT_DELAYED_WORK(&qrtr_ns_work, qrtr_ns_init);
+-	schedule_delayed_work(&qrtr_ns_work, msecs_to_jiffies(2000));
++	qrtr_ns_init();
+ 
+ 	return 0;
+ }
+@@ -1965,7 +1958,6 @@ postcore_initcall(qrtr_proto_init);
+ 
+ static void __exit qrtr_proto_fini(void)
+ {
+-	cancel_delayed_work_sync(&qrtr_ns_work);
+ 	qrtr_ns_remove();
+ 	sock_unregister(qrtr_family.family);
+ 	proto_unregister(&qrtr_proto);
+diff --git a/net/qrtr/qrtr.h b/net/qrtr/qrtr.h
+index 9cd35cb309973..2f2d670b64d28 100644
+--- a/net/qrtr/qrtr.h
++++ b/net/qrtr/qrtr.h
+@@ -34,7 +34,7 @@ int qrtr_endpoint_post(struct qrtr_endpoint *ep, const void *data, size_t len);
+ 
+ int qrtr_peek_pkt_size(const void *data);
+ 
+-void qrtr_ns_init(struct work_struct *work);
++void qrtr_ns_init(void);
+ 
+ void qrtr_ns_remove(void);
+ 
+-- 
+2.25.1
+

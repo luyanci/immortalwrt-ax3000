@@ -1,0 +1,70 @@
+From ee43f520f6e6d0653cde7d39de6ca9004a109b8d Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 21 May 2023 19:58:30 +0000
+Subject: [PATCH 2/2] ath11k: Make thermal optional
+
+---
+ drivers/net/wireless/ath/ath11k/Kconfig   | 6 ++++++
+ drivers/net/wireless/ath/ath11k/Makefile  | 2 +-
+ drivers/net/wireless/ath/ath11k/thermal.h | 2 +-
+ local-symbols                             | 1 +
+ 4 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/Kconfig b/drivers/net/wireless/ath/ath11k/Kconfig
+index 585120b..dba1c42 100644
+--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+@@ -60,6 +60,12 @@ config ATH11K_TRACING
+ 	help
+ 	  Select this to use ath11k tracing infrastructure.
+ 
++config ATH11K_THERMAL
++	bool "Atheros ath11k thermal monitoring support"
++	depends on THERMAL
++	---help---
++	  Select this to ath11k use hwmon for thermal measurement.
++
+ config ATH11K_SPECTRAL
+ 	bool "QCA ath11k spectral scan support"
+ 	depends on ATH11K_DEBUGFS
+diff --git a/drivers/net/wireless/ath/ath11k/Makefile b/drivers/net/wireless/ath/ath11k/Makefile
+index 8818543..dea7b02 100644
+--- a/drivers/net/wireless/ath/ath11k/Makefile
++++ b/drivers/net/wireless/ath/ath11k/Makefile
+@@ -23,7 +23,7 @@ ath11k-y += core.o \
+ ath11k-$(CPTCFG_ATH11K_DEBUGFS) += debugfs.o debugfs_htt_stats.o debugfs_sta.o debug_nss.o
+ ath11k-$(CPTCFG_NL80211_TESTMODE) += testmode.o
+ ath11k-$(CPTCFG_ATH11K_TRACING) += trace.o
+-ath11k-$(CONFIG_THERMAL) += thermal.o
++ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
+ ath11k-$(CONFIG_WANT_DEV_COREDUMP) += coredump.o
+ ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
+ ath11k-$(CPTCFG_ATH11K_PKTLOG) += pktlog.o
+diff --git a/drivers/net/wireless/ath/ath11k/thermal.h b/drivers/net/wireless/ath/ath11k/thermal.h
+index f9af55f..670a8a6 100644
+--- a/drivers/net/wireless/ath/ath11k/thermal.h
++++ b/drivers/net/wireless/ath/ath11k/thermal.h
+@@ -25,7 +25,7 @@ struct ath11k_thermal {
+ 	int temperature;
+ };
+ 
+-#if IS_REACHABLE(CONFIG_THERMAL)
++#if IS_REACHABLE(CPTCFG_ATH11K_THERMAL)
+ int ath11k_thermal_register(struct ath11k_base *sc);
+ void ath11k_thermal_unregister(struct ath11k_base *sc);
+ int ath11k_thermal_set_throttling(struct ath11k *ar, u32 throttle_state);
+diff --git a/local-symbols b/local-symbols
+index 6b00824..69c5efd 100644
+--- a/local-symbols
++++ b/local-symbols
+@@ -146,6 +146,7 @@ ATH11K_MEM_PROFILE_512M=
+ ATH11K_DEBUG=
+ ATH11K_DEBUGFS=
+ ATH11K_TRACING=
++ATH11K_THERMAL=
+ ATH11K_SPECTRAL=
+ ATH11K_PKTLOG=
+ ATH11K_CFR=
+-- 
+2.25.1
+
