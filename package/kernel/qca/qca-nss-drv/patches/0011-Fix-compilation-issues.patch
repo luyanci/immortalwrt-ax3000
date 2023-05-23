@@ -1,0 +1,31 @@
+From cefe13878b386f09c43b770f3d43a27dc6a27362 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Mon, 22 May 2023 21:17:38 +0000
+Subject: [PATCH] Fix compilation issues
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ nss_core.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/nss_core.c b/nss_core.c
+index d8dee77..e903e6e 100644
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -1103,13 +1103,6 @@ static inline void nss_core_rx_pbuf(struct nss_ctx_instance *nss_ctx, struct n2h
+  */
+ static inline void nss_core_set_skb_classify(struct sk_buff *nbuf)
+ {
+-#ifdef CONFIG_NET_CLS_ACT
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+-		nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
+-#else
+-		skb_set_tc_classify_offload(nbuf);
+-#endif
+-#endif
+ }
+ 
+ /*
+-- 
+2.25.1
+
