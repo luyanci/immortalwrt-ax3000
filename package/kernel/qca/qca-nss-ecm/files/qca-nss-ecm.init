@@ -39,13 +39,6 @@ get_front_end_mode() {
 	esac
 }
 
-support_bridge() {
-	#NSS support bridge acceleration
-	[ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && return 0
-	#SFE doesn't support bridge acceleration
-	[ -d /sys/kernel/debug/ecm/ecm_sfe_ipv4 ] && return 1
-}
-
 load_sfe() {
 	local kernel_version=$(uname -r)
 
@@ -67,17 +60,9 @@ load_ecm() {
 		[ ! -e /proc/device-tree/MP_256 ] && load_sfe
 		insmod ecm front_end_selection=$(get_front_end_mode)
 	}
-
-	support_bridge && {
-		sysctl -w net.bridge.bridge-nf-call-ip6tables=1
-		sysctl -w net.bridge.bridge-nf-call-iptables=1
-	}
 }
 
 unload_ecm() {
-	sysctl -w net.bridge.bridge-nf-call-ip6tables=0
-	sysctl -w net.bridge.bridge-nf-call-iptables=0
-
 	if [ -d /sys/module/ecm ]; then
 		#
 		# Stop ECM frontends
@@ -109,11 +94,6 @@ start() {
 	# If the acceleration engine is NSS, enable wifi redirect.
 	[ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && sysctl -w dev.nss.general.redirect=1
 
-	support_bridge && {
-		echo 'net.bridge.bridge-nf-call-ip6tables=1' >> /etc/sysctl.d/qca-nss-ecm.conf
-		echo 'net.bridge.bridge-nf-call-iptables=1' >> /etc/sysctl.d/qca-nss-ecm.conf
-	}
-
 	if [ -d /sys/module/qca_ovsmgr ]; then
 		insmod ecm_ovs
 	fi
@@ -128,9 +108,6 @@ stop() {
 
 	# If the acceleration engine is NSS, disable wifi redirect.
 	[ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && sysctl -w dev.nss.general.redirect=0
-
-	sed '/net.bridge.bridge-nf-call-ip6tables=1/d' -i /etc/sysctl.d/qca-nss-ecm.conf
-	sed '/net.bridge.bridge-nf-call-iptables=1/d' -i /etc/sysctl.d/qca-nss-ecm.conf
 
 	if [ -d /sys/module/ecm_ovs ]; then
 		rmmod ecm_ovs
