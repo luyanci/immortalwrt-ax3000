@@ -1,0 +1,55 @@
+From b9ef7b297018ee7ff2b7fa5b30d19648030ada32 Mon Sep 17 00:00:00 2001
+From: Tian Yang <tiany@codeaurora.org>
+Date: Wed, 29 Jul 2020 17:39:28 -0700
+Subject: [PATCH 2/2] skb_recycler: Add a cpustate for skb_recycler
+
+Add one cpu hotplug state for skb_recycler, called CPUHP_SKB_RECYCLER_DEAD
+to avoid using NET_DEV state, this solves a warning calltrace issue from net_dev
+since it cannot register its NET_DEV_CPU_DEAD callback during its initialization.
+
+Signed-off-by: Tian Yang <tiany@codeaurora.org>
+Change-Id: I6f5729ee300248ade42317114847959fda42dd20
+
+Pick from https://git.codelinaro.org/clo/qsdk/oss/kernel/linux-ipq-5.4/-/commit/abf72bdddfa61a4a90ae0edea921d5d2cd106f89
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ include/linux/cpuhotplug.h | 1 +
+ net/core/skbuff_recycle.c  | 4 ++--
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
+index 15835f37bd5f..e152b1430742 100644
+--- a/include/linux/cpuhotplug.h
++++ b/include/linux/cpuhotplug.h
+@@ -55,6 +55,7 @@ enum cpuhp_state {
+ 	CPUHP_RADIX_DEAD,
+ 	CPUHP_PAGE_ALLOC_DEAD,
+ 	CPUHP_NET_DEV_DEAD,
++	CPUHP_SKB_RECYCLER_DEAD,
+ 	CPUHP_PCI_XGENE_DEAD,
+ 	CPUHP_IOMMU_INTEL_DEAD,
+ 	CPUHP_LUSTRE_CFS_DEAD,
+diff --git a/net/core/skbuff_recycle.c b/net/core/skbuff_recycle.c
+index 3455485a6181..f0817c61ff21 100644
+--- a/net/core/skbuff_recycle.c
++++ b/net/core/skbuff_recycle.c
+@@ -172,7 +172,7 @@ static int skb_cpu_callback(unsigned int ocpu)
+ 	spin_unlock(&glob_recycler.lock);
+ #endif
+ 
+-	return NOTIFY_OK;
++	return NOTIFY_DONE;
+ }
+ 
+ void __init skb_recycler_init(void)
+@@ -196,5 +196,5 @@ void __init skb_recycler_init(void)
+ 	glob_recycler.head = 0;
+ 	glob_recycler.tail = 0;
+ #endif
+-	cpuhp_setup_state_nocalls(CPUHP_NET_DEV_DEAD, "net/skbuff_recycler:dead:",NULL, skb_cpu_callback);
++	cpuhp_setup_state_nocalls(CPUHP_SKB_RECYCLER_DEAD, "net/skbuff_recycler:dead:",NULL, skb_cpu_callback);
+ }
+-- 
+2.25.1
+
