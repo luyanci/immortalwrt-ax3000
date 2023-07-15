@@ -1,0 +1,92 @@
+From 03a5b6b4ab8cc9e00cf6795e23b7bb4a3068f607 Mon Sep 17 00:00:00 2001
+From: Elliot Berman <eberman@codeaurora.org>
+Date: Tue, 7 Jan 2020 13:04:12 -0800
+Subject: [PATCH 04/18] firmware: qcom_scm: Remove unused qcom_scm_get_version
+
+Remove unused qcom_scm_get_version.
+
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Reviewed-by: Vinod Koul <vkoul@kernel.org>
+Reviewed-by: Stephen Boyd <swboyd@chromium.org>
+Tested-by: Brian Masney <masneyb@onstation.org> # arm32
+Tested-by: Stephan Gerhold <stephan@gerhold.net>
+Signed-off-by: Elliot Berman <eberman@codeaurora.org>
+Link: https://lore.kernel.org/r/1578431066-19600-4-git-send-email-eberman@codeaurora.org
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+(cherry picked from commit 9a1108d2b001cda1af17160c78afedfff92e2202)
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ drivers/firmware/qcom_scm-32.c | 36 ----------------------------------
+ include/linux/qcom_scm.h       |  2 --
+ 2 files changed, 38 deletions(-)
+
+diff --git a/drivers/firmware/qcom_scm-32.c b/drivers/firmware/qcom_scm-32.c
+index 7b6f0e666073..782fa1470af3 100644
+--- a/drivers/firmware/qcom_scm-32.c
++++ b/drivers/firmware/qcom_scm-32.c
+@@ -292,42 +292,6 @@ static s32 qcom_scm_call_atomic2(u32 svc, u32 cmd, u32 arg1, u32 arg2)
+ 	return r0;
+ }
+ 
+-u32 qcom_scm_get_version(void)
+-{
+-	int context_id;
+-	static u32 version = -1;
+-	register u32 r0 asm("r0");
+-	register u32 r1 asm("r1");
+-
+-	if (version != -1)
+-		return version;
+-
+-	mutex_lock(&qcom_scm_lock);
+-
+-	r0 = 0x1 << 8;
+-	r1 = (u32)&context_id;
+-	do {
+-		asm volatile(
+-			__asmeq("%0", "r0")
+-			__asmeq("%1", "r1")
+-			__asmeq("%2", "r0")
+-			__asmeq("%3", "r1")
+-#ifdef REQUIRES_SEC
+-			".arch_extension sec\n"
+-#endif
+-			"smc	#0	@ switch to secure world\n"
+-			: "=r" (r0), "=r" (r1)
+-			: "r" (r0), "r" (r1)
+-			: "r2", "r3", "r12");
+-	} while (r0 == QCOM_SCM_INTERRUPTED);
+-
+-	version = r1;
+-	mutex_unlock(&qcom_scm_lock);
+-
+-	return version;
+-}
+-EXPORT_SYMBOL(qcom_scm_get_version);
+-
+ /**
+  * qcom_scm_set_cold_boot_addr() - Set the cold boot address for cpus
+  * @entry: Entry point function for the cpus
+diff --git a/include/linux/qcom_scm.h b/include/linux/qcom_scm.h
+index 2d5eff506e13..2e3df8ff31ca 100644
+--- a/include/linux/qcom_scm.h
++++ b/include/linux/qcom_scm.h
+@@ -53,7 +53,6 @@ extern int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz,
+ 			       const struct qcom_scm_vmperm *newvm,
+ 			       unsigned int dest_cnt);
+ extern void qcom_scm_cpu_power_down(u32 flags);
+-extern u32 qcom_scm_get_version(void);
+ extern int qcom_scm_set_remote_state(u32 state, u32 id);
+ extern int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare);
+ extern int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size);
+@@ -91,7 +90,6 @@ static inline int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz,
+ 				      const struct qcom_scm_vmperm *newvm,
+ 				      unsigned int dest_cnt) { return -ENODEV; }
+ static inline void qcom_scm_cpu_power_down(u32 flags) {}
+-static inline u32 qcom_scm_get_version(void) { return 0; }
+ static inline u32
+ qcom_scm_set_remote_state(u32 state,u32 id) { return -ENODEV; }
+ static inline int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare) { return -ENODEV; }
+-- 
+2.25.1
+
