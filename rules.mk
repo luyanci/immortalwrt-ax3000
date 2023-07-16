@@ -136,7 +136,7 @@ else
   TOOLCHAIN_DIR_NAME:=toolchain-$(GNU_TARGET_NAME)
 endif
 
-ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
+ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml),$(CONFIG_TARGET_ipq50xx)),)
   ifeq ($(CONFIG_GCC_USE_IREMAP),y)
     iremap = -iremap$(1):$(2)
   else

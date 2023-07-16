@@ -6,12 +6,14 @@ ifdef CONFIG_TESTING_KERNEL
   KERNEL_PATCHVER:=$(KERNEL_TESTING_PATCHVER)
 endif
 
-KERNEL_DETAILS_FILE=$(INCLUDE_DIR)/kernel-$(KERNEL_PATCHVER)
-ifeq ($(wildcard $(KERNEL_DETAILS_FILE)),)
-  $(error Missing kernel version/hash file for $(KERNEL_PATCHVER). Please create $(KERNEL_DETAILS_FILE))
-endif
+ifeq ($(LINUX_VERSION-$(KERNEL_PATCHVER)),)
+  KERNEL_DETAILS_FILE=$(INCLUDE_DIR)/kernel-$(KERNEL_PATCHVER)
+  ifeq ($(wildcard $(KERNEL_DETAILS_FILE)),)
+    $(error Missing kernel version/hash file for $(KERNEL_PATCHVER). Please create $(KERNEL_DETAILS_FILE))
+  endif
 
-include $(KERNEL_DETAILS_FILE)
+  include $(KERNEL_DETAILS_FILE)
+endif
 
 remove_uri_prefix=$(subst git://,,$(subst http://,,$(subst https://,,$(1))))
 sanitize_uri=$(call qstrip,$(subst @,_,$(subst :,_,$(subst .,_,$(subst -,_,$(subst /,_,$(1)))))))
@@ -22,13 +24,12 @@ ifneq ($(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
     CONFIG_KERNEL_GIT_REF:=HEAD
   endif
   LINUX_VERSION:=$(LINUX_VERSION)-$(call sanitize_uri,$(CONFIG_KERNEL_GIT_REF))
-else
+endif
 ifdef KERNEL_PATCHVER
   LINUX_VERSION:=$(KERNEL_PATCHVER)$(strip $(LINUX_VERSION-$(KERNEL_PATCHVER)))
 endif
 ifdef KERNEL_TESTING_PATCHVER
   LINUX_TESTING_VERSION:=$(KERNEL_TESTING_PATCHVER)$(strip $(LINUX_VERSION-$(KERNEL_TESTING_PATCHVER)))
-endif
 endif
 
 split_version=$(subst ., ,$(1))

@@ -1,0 +1,29 @@
+From b78b88ea590d3be7ad91cff32d4f7ce74ebe5501 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 22 Jan 2023 18:57:06 +0000
+Subject: [PATCH] Revert "OpenWRT: 520-squashfs_update_xz_comp_opts.patch"
+
+This reverts commit db8f00d56d74d9fd4f8eca2332e700ea5fac5061.
+---
+ fs/squashfs/xz_wrapper.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/fs/squashfs/xz_wrapper.c b/fs/squashfs/xz_wrapper.c
+index 9f4830a4c0d28..c609624e4b8a8 100644
+--- a/fs/squashfs/xz_wrapper.c
++++ b/fs/squashfs/xz_wrapper.c
+@@ -40,10 +40,8 @@ struct squashfs_xz {
+ };
+ 
+ struct disk_comp_opts {
+-	__le32 flags;
+-	__le16 bit_opts;
+-	__le16 fb;
+ 	__le32 dictionary_size;
++	__le32 flags;
+ };
+ 
+ struct comp_opts {
+-- 
+2.25.1
+

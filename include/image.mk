@@ -152,6 +152,7 @@ ifdef CONFIG_TARGET_IMAGES_GZIP
 endif
 
 
+ifneq ($(call kernel_patchver_ge,4.12.0),)
 # Disable noisy checks by default as in upstream
 DTC_FLAGS += \
   -Wno-unit_address_vs_reg \
@@ -165,6 +166,7 @@ DTC_FLAGS += \
   -Wno-graph_child_address \
   -Wno-graph_port \
   -Wno-unique_unit_address
+endif
 
 define Image/pad-to
 	dd if=$(1) of=$(1).new bs=$(2) conv=sync

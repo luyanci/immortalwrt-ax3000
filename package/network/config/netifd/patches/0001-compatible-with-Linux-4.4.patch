@@ -1,0 +1,56 @@
+compatible with Linux 4.4
+
+---
+ system-linux.c | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
+
+diff --git a/system-linux.c b/system-linux.c
+index e768853..e82615a 100644
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -1726,12 +1726,12 @@ system_set_ethtool_settings(struct device *dev, struct device_settings *s)
+ 	};
+ 	static const struct {
+ 		int speed;
+-		uint8_t bit_half;
+-		uint8_t bit_full;
+-	} speed_mask[] = {
+-		{ 10, ETHTOOL_LINK_MODE_10baseT_Half_BIT, ETHTOOL_LINK_MODE_10baseT_Full_BIT },
+-		{ 100, ETHTOOL_LINK_MODE_100baseT_Half_BIT, ETHTOOL_LINK_MODE_100baseT_Full_BIT },
+-		{ 1000, ETHTOOL_LINK_MODE_1000baseT_Half_BIT, ETHTOOL_LINK_MODE_1000baseT_Full_BIT },
++		uint32_t adv_half;
++		uint32_t adv_full;
++	} speed_adv[] = {
++		{ 10, ADVERTISED_10baseT_Half, ADVERTISED_10baseT_Full },
++		{ 100, ADVERTISED_100baseT_Half, ADVERTISED_100baseT_Full },
++		{ 1000, ADVERTISED_1000baseT_Half, ADVERTISED_1000baseT_Full },
+ 	};
+ 	uint32_t adv;
+ 	int i;
+@@ -1742,18 +1742,17 @@ system_set_ethtool_settings(struct device *dev, struct device_settings *s)
+ 		return;
+ 
+ 	adv = ecmd.supported;
+-	for (i = 0; i < ARRAY_SIZE(speed_mask); i++) {
++	for (i = 0; i < ARRAY_SIZE(speed_adv); i++) {
+ 		if (s->flags & DEV_OPT_DUPLEX) {
+-			int bit = s->duplex ? speed_mask[i].bit_half : speed_mask[i].bit_full;
+-			adv &= ~(1 << bit);
++			adv &= ~(s->duplex ? speed_adv[i].adv_half : speed_adv[i].adv_full);
+ 		}
+ 
+ 		if (!(s->flags & DEV_OPT_SPEED) ||
+-		    s->speed == speed_mask[i].speed)
++		    s->speed == speed_adv[i].speed)
+ 			continue;
+ 
+-		adv &= ~(1 << speed_mask[i].bit_full);
+-		adv &= ~(1 << speed_mask[i].bit_half);
++		adv &= ~speed_adv[i].adv_full;
++		adv &= ~speed_adv[i].adv_half;
+ 	}
+ 
+ 
+-- 
+2.25.1
+

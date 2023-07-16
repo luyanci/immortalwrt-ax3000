@@ -1,0 +1,89 @@
+From 56d8ab862eda10f5999f2298662428610f25b79f Mon Sep 17 00:00:00 2001
+From: Jisheng Zhang <jszhang@marvell.com>
+Date: Wed, 8 Jun 2016 15:53:46 +0800
+Subject: [PATCH] arm64: mm: only initialize swiotlb when necessary
+
+we only initialize swiotlb when swiotlb_force is true or not all system
+memory is DMA-able, this trivial optimization saves us 64MB when
+swiotlb is not necessary.
+
+Signed-off-by: Jisheng Zhang <jszhang@marvell.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit b67a8b29df7e6410c605c2759707c96512b15578)
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ arch/arm64/mm/dma-mapping.c | 15 ++++++++++++++-
+ arch/arm64/mm/init.c        |  3 ++-
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
+index 9e3e17540ed3f..8dbea94486b00 100644
+--- a/arch/arm64/mm/dma-mapping.c
++++ b/arch/arm64/mm/dma-mapping.c
+@@ -20,6 +20,7 @@
+ #include <linux/dma-mapping-fast.h>
+ #include <linux/gfp.h>
+ #include <linux/acpi.h>
++#include <linux/bootmem.h>
+ #include <linux/export.h>
+ #include <linux/slab.h>
+ #include <linux/genalloc.h>
+@@ -30,6 +31,8 @@
+ 
+ #include <asm/cacheflush.h>
+ 
++static int swiotlb __read_mostly;
++
+ static pgprot_t __get_dma_pgprot(struct dma_attrs *attrs, pgprot_t prot,
+ 				 bool coherent)
+ {
+@@ -342,6 +345,13 @@ static int __swiotlb_get_sgtable(struct device *dev, struct sg_table *sgt,
+ 	return ret;
+ }
+ 
++static int __swiotlb_dma_supported(struct device *hwdev, u64 mask)
++{
++	if (swiotlb)
++		return swiotlb_dma_supported(hwdev, mask);
++	return 1;
++}
++
+ static struct dma_map_ops swiotlb_dma_ops = {
+ 	.alloc = __dma_alloc,
+ 	.free = __dma_free,
+@@ -355,7 +365,7 @@ static struct dma_map_ops swiotlb_dma_ops = {
+ 	.sync_single_for_device = __swiotlb_sync_single_for_device,
+ 	.sync_sg_for_cpu = __swiotlb_sync_sg_for_cpu,
+ 	.sync_sg_for_device = __swiotlb_sync_sg_for_device,
+-	.dma_supported = swiotlb_dma_supported,
++	.dma_supported = __swiotlb_dma_supported,
+ 	.mapping_error = swiotlb_dma_mapping_error,
+ };
+ 
+@@ -514,6 +524,9 @@ EXPORT_SYMBOL(dummy_dma_ops);
+ 
+ static int __init arm64_dma_init(void)
+ {
++	if (swiotlb_force || max_pfn > (arm64_dma_phys_limit >> PAGE_SHIFT))
++		swiotlb = 1;
++
+ 	return atomic_pool_init();
+ }
+ arch_initcall(arm64_dma_init);
+diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
+index 1098b859aebfd..74e88a8212ea1 100644
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -281,7 +281,8 @@ static void __init free_unused_memmap(void)
+  */
+ void __init mem_init(void)
+ {
+-	swiotlb_init(1);
++	if (swiotlb_force || max_pfn > (arm64_dma_phys_limit >> PAGE_SHIFT))
++		swiotlb_init(1);
+ 
+ 	set_max_mapnr(pfn_to_page(max_pfn) - mem_map);
+ 
+-- 
+2.25.1
+
