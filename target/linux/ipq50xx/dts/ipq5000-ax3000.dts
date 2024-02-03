@@ -237,7 +237,7 @@
 	};
 
 	ess-instance {
-		num_devices = <2>;
+		num_devices = <1>;
 
 		// Dummy switch, to describe how the external ports connects to the MAC
 		// For example, some chips have PSGMII ports which combine 5 MAC into
@@ -267,70 +267,6 @@
 				// MAC1 ---SGMII---> QCA8337 SerDes
 				port@1 {
 					port_id = <2>;
-
-					forced-speed = <1000>;
-					forced-duplex = <1>;
-				};
-			};
-		};
-
-		// QCA8337
-		ess-switch1@1 {
-			compatible = "qcom,ess-switch-qca83xx";
-			device_id = <1>;
-
-			reset_gpio = <26>;
-
-			switch_access_mode = "mdio";
-			mdio-bus = <&mdio1>;
-
-			qca,ar8327-initvals = <
-				0x000c 0x00000080  // PAD6_MODE = MAC6_SGMII_EN
-				0x0010 0x002613a0  // PWS_REG = DEFAULT_VALUE | SERDES_AEN
-				0x0094 0x000010ce  // PORT6_STATUS = DEFAULT_VALUE | DUPLEX_MODE_6 | RXMAC_EN_6 |
-						   //                TXMAC_EN_6 | SPEED_6(1000M)
-				0x00e0 0xc74164de  // SGMII_CTRL = DEFAULT_VALUE | MODE_CTRL_25M(SGMII_PHY) | SGMII_EN_SD |
-						   //              SGMII_EN_TX | SGMII_EN_RX | SGMII_EN_PLL
-			>;
-
-			switch_cpu_bmp = <0x60>;  // CPU port bitmap: 5 6
-			switch_lan_bmp = <0x0e>;  // LAN port bitmap: 1 2 3
-			switch_wan_bmp = <0x10>;  // WAN port bitmap: 4
-
-			qcom,port_phyinfo {
-				// MAC1 -> Phy0 -> LAN1
-				port@1 {
-					port_id = <1>;
-					phy_address = <0>;
-				};
-
-				// MAC2 -> Phy1 -> LAN2
-				port@2 {
-					port_id = <2>;
-					phy_address = <1>;
-				};
-
-				// MAC3 -> Phy2 -> LAN3
-				port@3 {
-					port_id = <3>;
-					phy_address = <2>;
-				};
-
-				// MAC4 -> Phy3 -> WAN
-				port@4 {
-					port_id = <4>;
-					phy_address = <3>;
-				};
-
-				// MAC5 -> Phy4 -> IPQ5000 GE Phy
-				port@5 {
-					port_id = <5>;
-					phy_address = <4>;
-				};
-
-				// MAC6 ---SGMII---> IPQ5000 MAC1
-				port@6 {
-					port_id = <6>;
 
 					forced-speed = <1000>;
 					forced-duplex = <1>;
@@ -370,6 +306,11 @@
 		qcom,mactype = <2>; // GMAC_HAL_TYPE_SYN_GMAC
 		local-mac-address = [000000000000];
 		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
 	};
 };
 
@@ -393,28 +334,86 @@
 	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
 
 	// QCA8337 Phy0 -> LAN1
-	ethernet-phy@0 {
+	qca8337_0: ethernet-phy@0 {
 		reg = <0>;
 	};
 
 	// QCA8337 Phy1 -> LAN2
-	ethernet-phy@1 {
+	qca8337_1: ethernet-phy@1 {
 		reg = <1>;
 	};
 
 	// QCA8337 Phy2 -> LAN3
-	ethernet-phy@2 {
+	qca8337_2: ethernet-phy@2 {
 		reg = <2>;
 	};
 
 	// QCA8337 Phy3 -> WAN
-	ethernet-phy@3 {
+	qca8337_3: ethernet-phy@3 {
 		reg = <3>;
 	};
 
 	// QCA8337 Phy4 -> IPQ5018 GE Phy
-	ethernet-phy@4 {
+	qca8337_4: ethernet-phy@4 {
 		reg = <4>;
+	};
+
+
+	// QCA8337 switch
+	switch0: ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <17>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0cpu: port@0 {
+				reg = <0>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&mac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&qca8337_0>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu2";
+				phy-handle = <&qca8337_4>;
+			};
+		};
 	};
 };
 

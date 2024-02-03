@@ -1,0 +1,37 @@
+From c9cb5a055000cf39f6242ef74d00b2ae0815032e Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Wed, 25 Oct 2023 06:14:28 +0800
+Subject: [PATCH] nss_dp_main: Support fixed-link
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ nss_dp_main.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/nss_dp_main.c b/nss_dp_main.c
+index b9635bc5..d5228a9e 100644
+--- a/nss_dp_main.c
++++ b/nss_dp_main.c
+@@ -572,6 +572,19 @@ static int32_t nss_dp_of_get_pdata(struct device_node *np,
+ 	}
+ 
+ 	dp_priv->phy_node = of_parse_phandle(np, "phy-handle", 0);
++	if(!dp_priv->phy_node) {
++		if(of_phy_is_fixed_link(np)) {
++			int ret = of_phy_register_fixed_link(np);
++			if(ret < 0) {
++				pr_err("%s: fail to register fixed-link: %d\n", np->name, ret);
++				return -EFAULT;
++			}
++		}
++		dp_priv->phy_node = of_node_get(np);
++	}
++
++	if(!dp_priv->phy_node)
++		pr_err("%s: no phy-handle or fixed-link found\n", np->name);
+ 
+ 	if (of_property_read_u32(np, "qcom,mactype", &hal_pdata->mactype)) {
+ 		pr_err("%s: error reading mactype\n", np->name);
+-- 
+2.40.1
+

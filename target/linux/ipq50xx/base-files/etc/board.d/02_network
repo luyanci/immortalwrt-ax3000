@@ -7,22 +7,13 @@ ipq50xx_setup_interfaces()
 	local board="$1"
 	case $board in
 		redmi,ax3000)
-			ucidef_add_switch "switch1" \
-				"6u@eth1" "5u@eth0" \
-				"1:lan:1" "2:lan:2" "3:lan:3" \
-				"4:wan"
+			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 			;;
 		xiaomi,cr881x)
-			ucidef_add_switch "switch0" \
-				"8u@eth1" "4u@eth0" \
-				"0:lan:1" "1:lan:2" "2:lan:3" \
-				"3:wan"
+			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 			;;
 		cmcc,rax3000q)
-			ucidef_add_switch "switch1" \
-				"6u@eth1" "3u@eth0" \
-				"2:lan:1" "4:lan:2" "5:lan:3" \
-				"1:wan"
+			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 			;;
 	esac
 }
