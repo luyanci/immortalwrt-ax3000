@@ -1,0 +1,26 @@
+From af5fe08c2aa9700dc3de0921c8da9256c21e5bd0 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Wed, 25 Oct 2023 06:14:28 +0800
+Subject: [PATCH] MP: Fix DSA Support
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ config | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/config b/config
+index a8b97908..4fb7dc62 100755
+--- a/config
++++ b/config
+@@ -270,6 +270,8 @@ else ifeq (CPPE, $(CHIP_TYPE))
+ else ifeq (DESS, $(CHIP_TYPE))
+ 	IN_MALIBU_PHY=TRUE
+ else ifeq (MP, $(CHIP_TYPE))
++	IN_VSI=TRUE
++	IN_CTRLPKT=TRUE
+ 	IN_QCA803X_PHY=TRUE
+ 	IN_QCA808X_PHY=TRUE
+ else ifeq (APPE, $(CHIP_TYPE))
+-- 
+2.40.1
+
