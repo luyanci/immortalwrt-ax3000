@@ -1,0 +1,33 @@
+From 4f04092ee4dba6b4b6fc1f7f24b65ad7e2555396 Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Tue, 8 Dec 2020 09:52:56 +0200
+Subject: [PATCH 082/166] ath5k: Fix fall-through warnings for Clang
+
+In preparation to enable -Wimplicit-fallthrough for Clang, fix a warning
+by explicitly adding a break statement instead of letting the code fall
+through to the next case.
+
+Link: https://github.com/KSPP/linux/issues/115
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/e127232621c4de340509047a11d98093958303c5.1605896059.git.gustavoars@kernel.org
+(cherry picked from commit e64fa6d92ac4b978fcd2b4079ae71f7a4ea31f48)
+---
+ drivers/net/wireless/ath/ath5k/mac80211-ops.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath5k/mac80211-ops.c b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+index 5e866a193ed0..8f2719ff463c 100644
+--- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
++++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -433,6 +433,7 @@ ath5k_configure_filter(struct ieee80211_hw *hw, unsigned int changed_flags,
+ 	case NL80211_IFTYPE_STATION:
+ 		if (ah->assoc)
+ 			rfilt |= AR5K_RX_FILTER_BEACON;
++		break;
+ 	default:
+ 		break;
+ 	}
+-- 
+2.25.1
+

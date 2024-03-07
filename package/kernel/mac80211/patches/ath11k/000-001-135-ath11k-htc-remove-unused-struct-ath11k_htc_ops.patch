@@ -1,0 +1,41 @@
+From f0e2e3dc8d521bdc4a3a4145d0e26826b7ab22a0 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Fri, 11 Dec 2020 19:35:44 +0200
+Subject: [PATCH 135/166] ath11k: htc: remove unused struct ath11k_htc_ops
+
+No need for it so remove. Compile tested only.
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607708150-21066-5-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit d50370c953bc1a4f95bc5a18d287a84aed5bacc5)
+---
+ drivers/net/wireless/ath/ath11k/htc.h | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/htc.h b/drivers/net/wireless/ath/ath11k/htc.h
+index f0a3387567ca..848147cf81ee 100644
+--- a/drivers/net/wireless/ath/ath11k/htc.h
++++ b/drivers/net/wireless/ath/ath11k/htc.h
+@@ -221,10 +221,6 @@ enum ath11k_htc_ep_id {
+ 	ATH11K_HTC_EP_COUNT,
+ };
+ 
+-struct ath11k_htc_ops {
+-	void (*target_send_suspend_complete)(struct ath11k_base *ar);
+-};
+-
+ struct ath11k_htc_ep_ops {
+ 	void (*ep_tx_complete)(struct ath11k_base *, struct sk_buff *);
+ 	void (*ep_rx_complete)(struct ath11k_base *, struct sk_buff *);
+@@ -284,8 +280,6 @@ struct ath11k_htc {
+ 	/* protects endpoints */
+ 	spinlock_t tx_lock;
+ 
+-	struct ath11k_htc_ops htc_ops;
+-
+ 	u8 control_resp_buffer[ATH11K_HTC_MAX_CTRL_MSG_LEN];
+ 	int control_resp_len;
+ 
+-- 
+2.25.1
+

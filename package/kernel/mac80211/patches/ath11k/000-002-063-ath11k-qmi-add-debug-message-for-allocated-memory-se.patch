@@ -1,0 +1,36 @@
+From 906f9fd4077e3bb47e9cfa4eba02d41317c3aa36 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Thu, 11 Feb 2021 13:05:49 +0200
+Subject: [PATCH 63/93] ath11k: qmi: add debug message for allocated memory
+ segment addresses and sizes
+
+This helps debugging firmware memory allocation problems.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1613041549-7265-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit d5395a54865963089792f241756a7562d18262a1)
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 0db623ff4bb9..1aca841cd147 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -1686,6 +1686,11 @@ static int ath11k_qmi_respond_fw_mem_request(struct ath11k_base *ab)
+ 			req->mem_seg[i].addr = ab->qmi.target_mem[i].paddr;
+ 			req->mem_seg[i].size = ab->qmi.target_mem[i].size;
+ 			req->mem_seg[i].type = ab->qmi.target_mem[i].type;
++			ath11k_dbg(ab, ATH11K_DBG_QMI,
++				   "qmi req mem_seg[%d] 0x%llx %u %u\n", i,
++				    ab->qmi.target_mem[i].paddr,
++				    ab->qmi.target_mem[i].size,
++				    ab->qmi.target_mem[i].type);
+ 		}
+ 	}
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,45 @@
+From a9bc5caaa02620726b2250943abb60d13b3d8f0a Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Thu, 5 Nov 2020 14:33:56 +0800
+Subject: [PATCH 020/166] ath10k: cancel rx worker in hif_stop for SDIO
+
+The rx worker of SDIO should be cancelled after disable interrupt, and
+release rx sk_buff in queue, otherwise the rx worker maybe still run
+after hif_stop. And it should be cancelled before napi_synchronize in
+hif_stop, because the rx worker of SDIO will call napi_schedule, it
+should have no napi_schedule before napi_synchronize, otherwise it
+lead napi_synchronize wait untill napi_complete.
+
+Tested-on: QCA6174 hw3.2 SDIO WLAN.RMH.4.4.1-00049
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604558036-4056-1-git-send-email-wgong@codeaurora.org
+(cherry picked from commit 9501bc2b16b5850bcf6d87c985f1021d83cefab1)
+---
+ drivers/net/wireless/ath/ath10k/sdio.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/sdio.c b/drivers/net/wireless/ath/ath10k/sdio.c
+index 3e09802cfb6e..aa1f86028f01 100644
+--- a/drivers/net/wireless/ath/ath10k/sdio.c
++++ b/drivers/net/wireless/ath/ath10k/sdio.c
+@@ -1962,9 +1962,15 @@ static void ath10k_sdio_hif_stop(struct ath10k *ar)
+ {
+ 	struct ath10k_sdio_bus_request *req, *tmp_req;
+ 	struct ath10k_sdio *ar_sdio = ath10k_sdio_priv(ar);
++	struct sk_buff *skb;
+ 
+ 	ath10k_sdio_irq_disable(ar);
+ 
++	cancel_work_sync(&ar_sdio->async_work_rx);
++
++	while ((skb = skb_dequeue(&ar_sdio->rx_head)))
++		dev_kfree_skb_any(skb);
++
+ 	cancel_work_sync(&ar_sdio->wr_async_work);
+ 
+ 	spin_lock_bh(&ar_sdio->wr_async_lock);
+-- 
+2.25.1
+

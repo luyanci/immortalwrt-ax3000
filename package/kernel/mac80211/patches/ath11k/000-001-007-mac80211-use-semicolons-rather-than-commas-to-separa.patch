@@ -1,0 +1,44 @@
+From 345e85dbb92d92e8811f97d446930db1c48771e9 Mon Sep 17 00:00:00 2001
+From: Julia Lawall <Julia.Lawall@inria.fr>
+Date: Sun, 11 Oct 2020 12:34:55 +0200
+Subject: [PATCH 007/166] mac80211: use semicolons rather than commas to
+ separate statements
+
+Replace commas with semicolons.  Commas introduce unnecessary
+variability in the code structure and are hard to see.  What is done
+is essentially described by the following Coccinelle semantic patch
+(http://coccinelle.lip6.fr/):
+
+// <smpl>
+@@ expression e1,e2; @@
+e1
+-,
++;
+e2
+... when any
+// </smpl>
+
+Signed-off-by: Julia Lawall <Julia.Lawall@inria.fr>
+Link: https://lore.kernel.org/r/1602412498-32025-3-git-send-email-Julia.Lawall@inria.fr
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit c7287cb8c686f1f9eb1a5e557e9b5ff9b360ddae)
+---
+ net/mac80211/debugfs_sta.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/mac80211/debugfs_sta.c b/net/mac80211/debugfs_sta.c
+index 829dcad69c2c..6a51b8b58f9e 100644
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -274,7 +274,7 @@ static ssize_t sta_aql_read(struct file *file, char __user *userbuf,
+ 		"Q limit[low/high]: VO: %u/%u VI: %u/%u BE: %u/%u BK: %u/%u\n",
+ 		q_depth[0], q_depth[1], q_depth[2], q_depth[3],
+ 		q_limit_l[0], q_limit_h[0], q_limit_l[1], q_limit_h[1],
+-		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3]),
++		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3]);
+ 
+ 	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
+ 	kfree(buf);
+-- 
+2.25.1
+

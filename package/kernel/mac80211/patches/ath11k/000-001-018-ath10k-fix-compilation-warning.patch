@@ -1,0 +1,42 @@
+From 44e6633fd1ae01cfb62de636aac8eda919126c39 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Wed, 4 Nov 2020 22:07:17 +0530
+Subject: [PATCH 018/166] ath10k: fix compilation warning
+
+This change fixes below compilation warning.
+
+smatch warnings:
+ drivers/net/wireless/ath/ath10k/mac.c:9125 ath10k_mac_op_set_tid_config() error: uninitialized symbol 'ret'.
+
+No functional changes. Compile tested only.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604507837-29361-1-git-send-email-tamizhr@codeaurora.org
+(cherry picked from commit b9162645117841978a3fb31546409271e007dd28)
+---
+ drivers/net/wireless/ath/ath10k/mac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/mac.c b/drivers/net/wireless/ath/ath10k/mac.c
+index c857cf46832d..fad08c6caa04 100644
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -9169,10 +9169,11 @@ static int ath10k_mac_op_set_tid_config(struct ieee80211_hw *hw,
+ 			goto exit;
+ 	}
+ 
++	ret = 0;
++
+ 	if (sta)
+ 		goto exit;
+ 
+-	ret = 0;
+ 	arvif->tids_rst = 0;
+ 	data.curr_vif = vif;
+ 	data.ar = ar;
+-- 
+2.25.1
+

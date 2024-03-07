@@ -1,0 +1,66 @@
+From 95a0c04aadd3bf335d4d37943b6a2cd207789655 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:23:51 +0000
+Subject: [PATCH 034/166] ath: dfs_pri_detector: Demote zero/half completed
+ kernel-doc headers
+
+There are only a couple of these and none of them are conformant.
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/dfs_pri_detector.c:39: warning: Function parameter or member 'head' not described in 'pulse_elem'
+ drivers/net/wireless/ath/dfs_pri_detector.c:46: warning: Function parameter or member 'val' not described in 'pde_get_multiple'
+ drivers/net/wireless/ath/dfs_pri_detector.c:46: warning: Function parameter or member 'fraction' not described in 'pde_get_multiple'
+ drivers/net/wireless/ath/dfs_pri_detector.c:46: warning: Function parameter or member 'tolerance' not described in 'pde_get_multiple'
+
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-23-lee.jones@linaro.org
+(cherry picked from commit 748d250777e6eb461eb2279005e8deab4cff2845)
+---
+ drivers/net/wireless/ath/dfs_pri_detector.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/dfs_pri_detector.c b/drivers/net/wireless/ath/dfs_pri_detector.c
+index 05b0464c6b92..d07c454c9c00 100644
+--- a/drivers/net/wireless/ath/dfs_pri_detector.c
++++ b/drivers/net/wireless/ath/dfs_pri_detector.c
+@@ -29,18 +29,17 @@ struct ath_dfs_pool_stats global_dfs_pool_stats = {};
+ 	(MIN + PRI_TOLERANCE == MAX - PRI_TOLERANCE ? \
+ 	MIN + PRI_TOLERANCE : RUNTIME)
+ 
+-/**
++/*
+  * struct pulse_elem - elements in pulse queue
+- * @ts: time stamp in usecs
+  */
+ struct pulse_elem {
+ 	struct list_head head;
+ 	u64 ts;
+ };
+ 
+-/**
++/*
+  * pde_get_multiple() - get number of multiples considering a given tolerance
+- * @return factor if abs(val - factor*fraction) <= tolerance, 0 otherwise
++ * Return value: factor if abs(val - factor*fraction) <= tolerance, 0 otherwise
+  */
+ static u32 pde_get_multiple(u32 val, u32 fraction, u32 tolerance)
+ {
+@@ -70,7 +69,7 @@ static u32 pde_get_multiple(u32 val, u32 fraction, u32 tolerance)
+ 	return factor;
+ }
+ 
+-/**
++/*
+  * DOC: Singleton Pulse and Sequence Pools
+  *
+  * Instances of pri_sequence and pulse_elem are kept in singleton pools to
+-- 
+2.25.1
+

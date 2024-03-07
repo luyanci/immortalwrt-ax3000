@@ -1,0 +1,36 @@
+From c29ec82cd21d971e4b01f2a05c03b39219312377 Mon Sep 17 00:00:00 2001
+From: Devin Bayer <dev@doubly.so>
+Date: Mon, 7 Dec 2020 18:16:55 +0200
+Subject: [PATCH 079/166] ath11k: pci: add MODULE_FIRMWARE macros
+
+I am trying to get the ath11k driver to work with VyOS and during the
+build it tries to discover the firmware blobs which drivers require.
+
+This doesn't work with ath11k because it doesn't use the MODULE_FIRMWARE
+macro. This patch fixes that.
+
+Signed-off-by: Devin Bayer <dev@doubly.so>
+[kvalo@codeaurora.org: cleanup commit log, move to pci.c]
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201202182705.dhkml4nb4rf2vwav@orac
+(cherry picked from commit 3dbd7fe78c42e54a039d3444eac2183aa03f1408)
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index a297e77d6b56..75d10341429c 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -1066,3 +1066,8 @@ module_exit(ath11k_pci_exit);
+ 
+ MODULE_DESCRIPTION("Driver support for Qualcomm Technologies 802.11ax WLAN PCIe devices");
+ MODULE_LICENSE("Dual BSD/GPL");
++
++/* QCA639x 2.0 firmware files */
++MODULE_FIRMWARE(ATH11K_FW_DIR "/QCA6390/hw2.0/" ATH11K_BOARD_API2_FILE);
++MODULE_FIRMWARE(ATH11K_FW_DIR "/QCA6390/hw2.0/" ATH11K_AMSS_FILE);
++MODULE_FIRMWARE(ATH11K_FW_DIR "/QCA6390/hw2.0/" ATH11K_M3_FILE);
+-- 
+2.25.1
+

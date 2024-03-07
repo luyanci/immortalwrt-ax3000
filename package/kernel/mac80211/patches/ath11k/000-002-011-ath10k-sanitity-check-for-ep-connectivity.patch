@@ -1,0 +1,38 @@
+From b20cb792f952e9229cde8df3f03303de1c88013b Mon Sep 17 00:00:00 2001
+From: Zekun Shen <bruceshenzk@gmail.com>
+Date: Mon, 11 Jan 2021 19:49:29 +0200
+Subject: [PATCH 11/93] ath10k: sanitity check for ep connectivity
+
+Function ep_rx_complete is being called without NULL checking
+in ath10k_htc_rx_completion_handler. Without such check, mal-
+formed packet is able to cause jump to NULL.
+
+ep->service_id seems a good candidate for sanity check as it is
+used in usb.c.
+
+Signed-off-by: Zekun Shen <bruceshenzk@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20200622022055.16028-1-bruceshenzk@gmail.com
+(cherry picked from commit d18ba9f1351c4675948c87e33a571d28c97d53a7)
+---
+ drivers/net/wireless/ath/ath10k/htc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/htc.c b/drivers/net/wireless/ath/ath10k/htc.c
+index 31df6dd04bf6..0a37be6a7d33 100644
+--- a/drivers/net/wireless/ath/ath10k/htc.c
++++ b/drivers/net/wireless/ath/ath10k/htc.c
+@@ -449,6 +449,10 @@ void ath10k_htc_rx_completion_handler(struct ath10k *ar, struct sk_buff *skb)
+ 	}
+ 
+ 	ep = &htc->endpoint[eid];
++	if (ep->service_id == ATH10K_HTC_SVC_ID_UNUSED) {
++		ath10k_warn(ar, "htc rx endpoint %d is not connected\n", eid);
++		goto out;
++	}
+ 
+ 	payload_len = __le16_to_cpu(hdr->len);
+ 
+-- 
+2.25.1
+

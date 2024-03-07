@@ -1,0 +1,38 @@
+From 320141c3f3b1f67adbe7c7cd0a4f144d90c00276 Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Tue, 8 Dec 2020 09:52:57 +0200
+Subject: [PATCH 084/166] wcn36xx: Fix fall-through warnings for Clang
+
+In preparation to enable -Wimplicit-fallthrough for Clang, fix a
+warning by replacing a /* fall through */ comment with the new
+pseudo-keyword macro fallthrough; instead of letting the code fall
+through to the next case.
+
+Notice that Clang doesn't recognize /* fall through */ comments as
+implicit fall-through markings.
+
+Link: https://github.com/KSPP/linux/issues/115
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/f932c887e013767cbdabfdddd671086e8ae63193.1605896060.git.gustavoars@kernel.org
+(cherry picked from commit b6041e1a302006b899e6838609f6ad933c1a815c)
+---
+ drivers/net/wireless/ath/wcn36xx/smd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/wcn36xx/smd.c b/drivers/net/wireless/ath/wcn36xx/smd.c
+index acf533fae46a..5445277dd8de 100644
+--- a/drivers/net/wireless/ath/wcn36xx/smd.c
++++ b/drivers/net/wireless/ath/wcn36xx/smd.c
+@@ -2570,7 +2570,7 @@ static int wcn36xx_smd_hw_scan_ind(struct wcn36xx *wcn, void *buf, size_t len)
+ 	case WCN36XX_HAL_SCAN_IND_FAILED:
+ 	case WCN36XX_HAL_SCAN_IND_DEQUEUED:
+ 		scan_info.aborted = true;
+-		/* fall through */
++		fallthrough;
+ 	case WCN36XX_HAL_SCAN_IND_COMPLETED:
+ 		mutex_lock(&wcn->scan_lock);
+ 		wcn->scan_req = NULL;
+-- 
+2.25.1
+

@@ -1,0 +1,172 @@
+From f824daa307c5867bc4fb2a4200ead98d217074c8 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Fri, 6 Nov 2020 15:40:42 +0530
+Subject: [PATCH 059/166] ath10k: add target IRAM recovery feature support
+
+This target IRAM recovery feature support is to copy target
+IRAM contents available at ATH10K_MEM_REGION_TYPE_REG to host
+memory for back up after firmware loaded. Target IRAM contents
+are copied to wmi memory chunks allocated for the
+WMI_IRAM_RECOVERY_HOST_MEM_REQ_ID and provide the wmi chunks
+address to the firmware through wmi init command.
+
+If firmware detects andy IRAM corruption through periodic
+checksum validation, It will download the IRAM contents back
+from the provided wmi memory chunks address using hif_memcpy.
+
+This IRAM recovery feature prevent target assert in case of
+unexpected target IRAM corruptions.
+
+This patch also introduce a new feature flag 'iram-recovery' for
+backward compatibility.
+
+Tested-on: QCA9888 10.4-3.9.0.2-00094
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604657442-23674-1-git-send-email-vnaralas@codeaurora.org
+(cherry picked from commit 9af7c32ceca85da27867dd863697d2aafc80a3f8)
+---
+ drivers/net/wireless/ath/ath10k/core.c | 83 ++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath10k/core.h |  3 +
+ drivers/net/wireless/ath/ath10k/wmi.h  |  2 +
+ 3 files changed, 88 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/ath10k/core.c
+index 419b06b974c5..796107b14d9f 100644
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -651,6 +651,7 @@ static const char *const ath10k_core_fw_feature_str[] = {
+ 	[ATH10K_FW_FEATURE_NON_BMI] = "non-bmi",
+ 	[ATH10K_FW_FEATURE_SINGLE_CHAN_INFO_PER_CHANNEL] = "single-chan-info-per-channel",
+ 	[ATH10K_FW_FEATURE_PEER_FIXED_RATE] = "peer-fixed-rate",
++	[ATH10K_FW_FEATURE_IRAM_RECOVERY] = "iram-recovery",
+ };
+ 
+ static unsigned int ath10k_core_get_fw_feature_str(char *buf,
+@@ -2604,6 +2605,78 @@ static int ath10k_core_compat_services(struct ath10k *ar)
+ 	return 0;
+ }
+ 
++#define TGT_IRAM_READ_PER_ITR (8 * 1024)
++
++static int ath10k_core_copy_target_iram(struct ath10k *ar)
++{
++	const struct ath10k_hw_mem_layout *hw_mem;
++	const struct ath10k_mem_region *tmp, *mem_region = NULL;
++	dma_addr_t paddr;
++	void *vaddr = NULL;
++	u8 num_read_itr;
++	int i, ret;
++	u32 len, remaining_len;
++
++	hw_mem = ath10k_coredump_get_mem_layout(ar);
++	if (!hw_mem)
++		return -ENOMEM;
++
++	for (i = 0; i < hw_mem->region_table.size; i++) {
++		tmp = &hw_mem->region_table.regions[i];
++		if (tmp->type == ATH10K_MEM_REGION_TYPE_REG) {
++			mem_region = tmp;
++			break;
++		}
++	}
++
++	if (!mem_region)
++		return -ENOMEM;
++
++	for (i = 0; i < ar->wmi.num_mem_chunks; i++) {
++		if (ar->wmi.mem_chunks[i].req_id ==
++		    WMI_IRAM_RECOVERY_HOST_MEM_REQ_ID) {
++			vaddr = ar->wmi.mem_chunks[i].vaddr;
++			len = ar->wmi.mem_chunks[i].len;
++			break;
++		}
++	}
++
++	if (!vaddr || !len) {
++		ath10k_warn(ar, "No allocated memory for IRAM back up");
++		return -ENOMEM;
++	}
++
++	len = (len < mem_region->len) ? len : mem_region->len;
++	paddr = mem_region->start;
++	num_read_itr = len / TGT_IRAM_READ_PER_ITR;
++	remaining_len = len % TGT_IRAM_READ_PER_ITR;
++	for (i = 0; i < num_read_itr; i++) {
++		ret = ath10k_hif_diag_read(ar, paddr, vaddr,
++					   TGT_IRAM_READ_PER_ITR);
++		if (ret) {
++			ath10k_warn(ar, "failed to copy firmware IRAM contents: %d",
++				    ret);
++			return ret;
++		}
++
++		paddr += TGT_IRAM_READ_PER_ITR;
++		vaddr += TGT_IRAM_READ_PER_ITR;
++	}
++
++	if (remaining_len) {
++		ret = ath10k_hif_diag_read(ar, paddr, vaddr, remaining_len);
++		if (ret) {
++			ath10k_warn(ar, "failed to copy firmware IRAM contents: %d",
++				    ret);
++			return ret;
++		}
++	}
++
++	ath10k_dbg(ar, ATH10K_DBG_BOOT, "target IRAM back up completed\n");
++
++	return 0;
++}
++
+ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
+ 		      const struct ath10k_fw_components *fw)
+ {
+@@ -2765,6 +2838,16 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "firmware %s booted\n",
+ 		   ar->hw->wiphy->fw_version);
+ 
++	if (test_bit(ATH10K_FW_FEATURE_IRAM_RECOVERY,
++		     ar->running_fw->fw_file.fw_features)) {
++		status = ath10k_core_copy_target_iram(ar);
++		if (status) {
++			ath10k_warn(ar, "failed to copy target iram contents: %d",
++				    status);
++			goto err_hif_stop;
++		}
++	}
++
+ 	if (test_bit(WMI_SERVICE_EXT_RES_CFG_SUPPORT, ar->wmi.svc_map) &&
+ 	    mode == ATH10K_FIRMWARE_MODE_NORMAL) {
+ 		val = 0;
+diff --git a/drivers/net/wireless/ath/ath10k/core.h b/drivers/net/wireless/ath/ath10k/core.h
+index aa713d037c7f..f3853bd26275 100644
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -834,6 +834,9 @@ enum ath10k_fw_features {
+ 	/* Firmware allows setting peer fixed rate */
+ 	ATH10K_FW_FEATURE_PEER_FIXED_RATE = 21,
+ 
++	/* Firmware support IRAM recovery */
++	ATH10K_FW_FEATURE_IRAM_RECOVERY = 22,
++
+ 	/* keep last */
+ 	ATH10K_FW_FEATURE_COUNT,
+ };
+diff --git a/drivers/net/wireless/ath/ath10k/wmi.h b/drivers/net/wireless/ath/ath10k/wmi.h
+index 11300b1320a9..c32aabea8293 100644
+--- a/drivers/net/wireless/ath/ath10k/wmi.h
++++ b/drivers/net/wireless/ath/ath10k/wmi.h
+@@ -3060,6 +3060,8 @@ struct host_memory_chunk {
+ 	__le32 size;
+ } __packed;
+ 
++#define WMI_IRAM_RECOVERY_HOST_MEM_REQ_ID 8
++
+ struct wmi_host_mem_chunks {
+ 	__le32 count;
+ 	/* some fw revisions require at least 1 chunk regardless of count */
+-- 
+2.25.1
+

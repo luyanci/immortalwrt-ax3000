@@ -1,0 +1,74 @@
+From 2d09dd731f9d945392518301a5c5850a5403dbb1 Mon Sep 17 00:00:00 2001
+From: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Date: Wed, 4 Nov 2020 10:18:19 +0400
+Subject: [PATCH 014/166] mac80211: add radiotap flag to assure frames are not
+ reordered
+
+Add a new radiotap flag to indicate injected frames must not be
+reordered relative to other frames that also have this flag set,
+independent of priority field values in the transmitted frame.
+Parse this radiotap flag and define and set a corresponding Tx
+control flag. Note that this flag has recently been standardized
+as part of an update to radiotap.
+
+Signed-off-by: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Link: https://lore.kernel.org/r/20201104061823.197407-2-Mathy.Vanhoef@kuleuven.be
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 30df81301c63643fe1c3b9f05a57059c35a6a953)
+---
+ include/net/ieee80211_radiotap.h | 1 +
+ include/net/mac80211.h           | 4 ++++
+ net/mac80211/tx.c                | 3 +++
+ 3 files changed, 8 insertions(+)
+
+diff --git a/include/net/ieee80211_radiotap.h b/include/net/ieee80211_radiotap.h
+index 19c00d100096..c0854933e24f 100644
+--- a/include/net/ieee80211_radiotap.h
++++ b/include/net/ieee80211_radiotap.h
+@@ -118,6 +118,7 @@ enum ieee80211_radiotap_tx_flags {
+ 	IEEE80211_RADIOTAP_F_TX_RTS = 0x0004,
+ 	IEEE80211_RADIOTAP_F_TX_NOACK = 0x0008,
+ 	IEEE80211_RADIOTAP_F_TX_NOSEQNO = 0x0010,
++	IEEE80211_RADIOTAP_F_TX_ORDER = 0x0020,
+ };
+ 
+ /* for IEEE80211_RADIOTAP_MCS "have" flags */
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 826227e1193a..05c7524bab26 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -857,6 +857,9 @@ enum mac80211_tx_info_flags {
+  *	it can be sent out.
+  * @IEEE80211_TX_CTRL_NO_SEQNO: Do not overwrite the sequence number that
+  *	has already been assigned to this frame.
++ * @IEEE80211_TX_CTRL_DONT_REORDER: This frame should not be reordered
++ *	relative to other frames that have this flag set, independent
++ *	of their QoS TID or other priority field values.
+  *
+  * These flags are used in tx_info->control.flags.
+  */
+@@ -869,6 +872,7 @@ enum mac80211_tx_control_flags {
+ 	IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP	= BIT(5),
+ 	IEEE80211_TX_INTCFL_NEED_TXPROCESSING	= BIT(6),
+ 	IEEE80211_TX_CTRL_NO_SEQNO		= BIT(7),
++	IEEE80211_TX_CTRL_DONT_REORDER		= BIT(8),
+ };
+ 
+ /*
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 56a4d0d20a26..42945c4cb2f0 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2113,6 +2113,9 @@ bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+ 				info->flags |= IEEE80211_TX_CTL_NO_ACK;
+ 			if (txflags & IEEE80211_RADIOTAP_F_TX_NOSEQNO)
+ 				info->control.flags |= IEEE80211_TX_CTRL_NO_SEQNO;
++			if (txflags & IEEE80211_RADIOTAP_F_TX_ORDER)
++				info->control.flags |=
++					IEEE80211_TX_CTRL_DONT_REORDER;
+ 			break;
+ 
+ 		case IEEE80211_RADIOTAP_RATE:
+-- 
+2.25.1
+

@@ -1,0 +1,142 @@
+From 65a11022b5f448755f880eb4a2d8fa9841961061 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Tue, 27 Oct 2020 15:01:45 +0200
+Subject: [PATCH 003/166] ath11k: remove repeated words in comments and
+ warnings
+
+Found by latest checkpatch.
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1603803705-22447-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 16f283f0a4bbc4cc84be574882706fa0d244186e)
+---
+ drivers/net/wireless/ath/ath11k/dp.c       | 2 +-
+ drivers/net/wireless/ath/ath11k/dp.h       | 2 +-
+ drivers/net/wireless/ath/ath11k/dp_rx.c    | 6 +++---
+ drivers/net/wireless/ath/ath11k/hal_desc.h | 2 +-
+ drivers/net/wireless/ath/ath11k/rx_desc.h  | 2 +-
+ drivers/net/wireless/ath/ath11k/testmode.c | 4 ++--
+ drivers/net/wireless/ath/ath11k/wmi.c      | 2 +-
+ 7 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.c b/drivers/net/wireless/ath/ath11k/dp.c
+index 59dd185a0cfc..f977056ae5e8 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -381,7 +381,7 @@ static int ath11k_dp_srng_common_setup(struct ath11k_base *ab)
+ 					   HAL_WBM2SW_RELEASE, i, 0,
+ 					   DP_TX_COMP_RING_SIZE);
+ 		if (ret) {
+-			ath11k_warn(ab, "failed to set up tcl_comp ring ring (%d) :%d\n",
++			ath11k_warn(ab, "failed to set up tcl_comp ring (%d) :%d\n",
+ 				    i, ret);
+ 			goto err;
+ 		}
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index ee8db812589b..d4fd02375fad 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -423,7 +423,7 @@ enum htt_srng_ring_id {
+  *                     Used only by Consumer ring to generate ring_sw_int_p.
+  *                     Ring entries low threshold water mark, that is used
+  *                     in combination with the interrupt timer as well as
+- *                     the the clearing of the level interrupt.
++ *                     the clearing of the level interrupt.
+  *           b'16:18 - prefetch_timer_cfg:
+  *                     Used only by Consumer ring to set timer mode to
+  *                     support Application prefetch handling.
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 01625327eef7..571722baa0b3 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -377,7 +377,7 @@ static int ath11k_dp_rxdma_buf_ring_free(struct ath11k *ar,
+ 	spin_lock_bh(&rx_ring->idr_lock);
+ 	idr_for_each_entry(&rx_ring->bufs_idr, skb, buf_id) {
+ 		idr_remove(&rx_ring->bufs_idr, buf_id);
+-		/* TODO: Understand where internal driver does this dma_unmap of
++		/* TODO: Understand where internal driver does this dma_unmap
+ 		 * of rxdma_buffer.
+ 		 */
+ 		dma_unmap_single(ar->ab->dev, ATH11K_SKB_RXCB(skb)->paddr,
+@@ -399,7 +399,7 @@ static int ath11k_dp_rxdma_buf_ring_free(struct ath11k *ar,
+ 	spin_lock_bh(&rx_ring->idr_lock);
+ 	idr_for_each_entry(&rx_ring->bufs_idr, skb, buf_id) {
+ 		idr_remove(&rx_ring->bufs_idr, buf_id);
+-		/* XXX: Understand where internal driver does this dma_unmap of
++		/* XXX: Understand where internal driver does this dma_unmap
+ 		 * of rxdma_buffer.
+ 		 */
+ 		dma_unmap_single(ar->ab->dev, ATH11K_SKB_RXCB(skb)->paddr,
+@@ -960,7 +960,7 @@ int ath11k_peer_rx_tid_setup(struct ath11k *ar, const u8 *peer_mac, int vdev_id,
+ 
+ 	rx_tid->ba_win_sz = ba_win_sz;
+ 
+-	/* TODO: Optimize the memory allocation for qos tid based on the
++	/* TODO: Optimize the memory allocation for qos tid based on
+ 	 * the actual BA window size in REO tid update path.
+ 	 */
+ 	if (tid == HAL_DESC_REO_NON_QOS_TID)
+diff --git a/drivers/net/wireless/ath/ath11k/hal_desc.h b/drivers/net/wireless/ath/ath11k/hal_desc.h
+index 8a592814efa0..ceebdc28ddeb 100644
+--- a/drivers/net/wireless/ath/ath11k/hal_desc.h
++++ b/drivers/net/wireless/ath/ath11k/hal_desc.h
+@@ -716,7 +716,7 @@ struct hal_reo_dest_ring {
+  *
+  * rx_msdu_info
+  *		General information related to the MSDU that is passed
+- *		on from RXDMA all the way to to the REO destination ring.
++ *		on from RXDMA all the way to the REO destination ring.
+  *
+  * queue_addr_lo
+  *		Address (lower 32 bits) of the REO queue descriptor.
+diff --git a/drivers/net/wireless/ath/ath11k/rx_desc.h b/drivers/net/wireless/ath/ath11k/rx_desc.h
+index 1c4264637a41..86494da1069a 100644
+--- a/drivers/net/wireless/ath/ath11k/rx_desc.h
++++ b/drivers/net/wireless/ath/ath11k/rx_desc.h
+@@ -170,7 +170,7 @@ struct rx_attention {
+  *
+  * ast_index_not_found
+  *		Only valid when first_msdu is set. Indicates no AST matching
+- *		entries within the the max search count.
++ *		entries within the max search count.
+  *
+  * ast_index_timeout
+  *		Only valid when first_msdu is set. Indicates an unsuccessful
+diff --git a/drivers/net/wireless/ath/ath11k/testmode.c b/drivers/net/wireless/ath/ath11k/testmode.c
+index d2dc9db01491..4bf1931adbaa 100644
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -51,7 +51,7 @@ bool ath11k_tm_event_wmi(struct ath11k *ar, u32 cmd_id, struct sk_buff *skb)
+ 	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_CMD, ATH11K_TM_CMD_WMI);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+-			    "failed to to put testmode wmi event cmd attribute: %d\n",
++			    "failed to put testmode wmi event cmd attribute: %d\n",
+ 			    ret);
+ 		kfree_skb(nl_skb);
+ 		goto out;
+@@ -60,7 +60,7 @@ bool ath11k_tm_event_wmi(struct ath11k *ar, u32 cmd_id, struct sk_buff *skb)
+ 	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_WMI_CMDID, cmd_id);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+-			    "failed to to put testmode wmi even cmd_id: %d\n",
++			    "failed to put testmode wmi even cmd_id: %d\n",
+ 			    ret);
+ 		kfree_skb(nl_skb);
+ 		goto out;
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 8eca92520837..6e173737c0eb 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -362,7 +362,7 @@ ath11k_pull_mac_phy_cap_svc_ready_ext(struct ath11k_pdev_wmi *wmi_handle,
+ 	 * For example, for 4x4 capable macphys, first 4 chains can be used for first
+ 	 * mac and the remaing 4 chains can be used for the second mac or vice-versa.
+ 	 * In this case, tx/rx chainmask 0xf will be advertised for first mac and 0xf0
+-	 * will be advertised for second mac or vice-versa. Compute the shift value for
++	 * will be advertised for second mac or vice-versa. Compute the shift value
+ 	 * for tx/rx chainmask which will be used to advertise supported ht/vht rates to
+ 	 * mac80211.
+ 	 */
+-- 
+2.25.1
+

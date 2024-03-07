@@ -1,0 +1,34 @@
+From 61f81d1104eeace3175a834ccdf66368c8aa33bc Mon Sep 17 00:00:00 2001
+From: Ilan Peer <ilan.peer@intel.com>
+Date: Sun, 29 Nov 2020 17:30:49 +0200
+Subject: [PATCH 102/166] cfg80211: Update TSF and TSF BSSID for multi BSS
+
+When a new BSS entry is created based on multi BSS IE, the
+TSF and the TSF BSSID were not updated. Fix it.
+
+Signed-off-by: Ilan Peer <ilan.peer@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201129172929.8377d5063827.I6f2011b6017c2ad507c61a3f1ca03b7177a46e32@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit b45a19dd7e46462d0f34fcc05e5b1871d4c415ec)
+---
+ net/wireless/scan.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/net/wireless/scan.c b/net/wireless/scan.c
+index 5f92d85acf45..1b7fec3b53cd 100644
+--- a/net/wireless/scan.c
++++ b/net/wireless/scan.c
+@@ -1899,6 +1899,9 @@ cfg80211_inform_single_bss_data(struct wiphy *wiphy,
+ 	tmp.pub.beacon_interval = beacon_interval;
+ 	tmp.pub.capability = capability;
+ 	tmp.ts_boottime = data->boottime_ns;
++	tmp.parent_tsf = data->parent_tsf;
++	ether_addr_copy(tmp.parent_bssid, data->parent_bssid);
++
+ 	if (non_tx_data) {
+ 		tmp.pub.transmitted_bss = non_tx_data->tx_bss;
+ 		ts = bss_from_pub(non_tx_data->tx_bss)->ts;
+-- 
+2.25.1
+

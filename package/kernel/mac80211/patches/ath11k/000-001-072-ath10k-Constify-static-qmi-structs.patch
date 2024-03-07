@@ -1,0 +1,43 @@
+From 09f2cffa47dce591c8cc6feb4eba4f1df2417844 Mon Sep 17 00:00:00 2001
+From: Rikard Falkeborn <rikard.falkeborn@gmail.com>
+Date: Tue, 24 Nov 2020 17:59:18 +0200
+Subject: [PATCH 072/166] ath10k: Constify static qmi structs
+
+qmi_msg_handler[] and ath10k_qmi_ops are only used as input arguments
+to qmi_handle_init() which accepts const pointers to both qmi_ops and
+qmi_msg_handler. Make them const to allow the compiler to put them in
+read-only memory.
+
+Signed-off-by: Rikard Falkeborn <rikard.falkeborn@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201122234031.33432-3-rikard.falkeborn@gmail.com
+(cherry picked from commit ad37a46e8cb5e108ddb564ca431d05c4ba7cf052)
+---
+ drivers/net/wireless/ath/ath10k/qmi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/qmi.c b/drivers/net/wireless/ath/ath10k/qmi.c
+index ae6b1f402adf..07e478f9a808 100644
+--- a/drivers/net/wireless/ath/ath10k/qmi.c
++++ b/drivers/net/wireless/ath/ath10k/qmi.c
+@@ -917,7 +917,7 @@ static void ath10k_qmi_msa_ready_ind(struct qmi_handle *qmi_hdl,
+ 	ath10k_qmi_driver_event_post(qmi, ATH10K_QMI_EVENT_MSA_READY_IND, NULL);
+ }
+ 
+-static struct qmi_msg_handler qmi_msg_handler[] = {
++static const struct qmi_msg_handler qmi_msg_handler[] = {
+ 	{
+ 		.type = QMI_INDICATION,
+ 		.msg_id = QMI_WLFW_FW_READY_IND_V01,
+@@ -981,7 +981,7 @@ static void ath10k_qmi_del_server(struct qmi_handle *qmi_hdl,
+ 					     NULL);
+ }
+ 
+-static struct qmi_ops ath10k_qmi_ops = {
++static const struct qmi_ops ath10k_qmi_ops = {
+ 	.new_server = ath10k_qmi_new_server,
+ 	.del_server = ath10k_qmi_del_server,
+ };
+-- 
+2.25.1
+

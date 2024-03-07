@@ -1,0 +1,83 @@
+From 064cb83a786a0a0b15a0b27e1fc6a535f90a9810 Mon Sep 17 00:00:00 2001
+From: Shuah Khan <skhan@linuxfoundation.org>
+Date: Wed, 17 Feb 2021 14:18:01 -0700
+Subject: [PATCH 93/93] Revert "ath9k: fix ath_tx_process_buffer() potential
+ null ptr dereference"
+
+This reverts commit a56c14bb21b296fb6d395164ab62ef2e419e5069.
+
+ath_tx_process_buffer() doesn't dereference or check sta and passes it
+to ath_tx_complete_aggr() and ath_tx_complete_buf().
+
+ath_tx_complete_aggr() checks the pointer before use. No problem here.
+
+ath_tx_complete_buf() doesn't check or dereference sta and passes it on
+to ath_tx_complete(). ath_tx_complete() doesn't check or dereference sta,
+but assigns it to tx_info->status.status_driver_data[0]
+
+ath_tx_complete_buf() is called from ath_tx_complete_aggr() passing
+null ieee80211_sta pointer.
+
+There is a potential for dereference later on, if and when the
+tx_info->status.status_driver_data[0]is referenced. In addition, the
+rcu read lock might be released before referencing the contents.
+
+ath_tx_complete_buf() should be fixed to check sta perhaps? Worth
+looking into.
+
+Reverting this patch because it doesn't solve the problem and introduces
+memory leak by skipping buffer completion if the pointer (sta) is NULL.
+
+Fixes: a56c14bb21b2 ("ath9k: fix ath_tx_process_buffer() potential null ptr dereference")
+Signed-off-by: Shuah Khan <skhan@linuxfoundation.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210217211801.22540-1-skhan@linuxfoundation.org
+(cherry picked from commit 14ebaeeff8d0f2d5d59b6df6b59f54345839f9d9)
+---
+ drivers/net/wireless/ath/ath9k/xmit.c | 28 ++++++++++++---------------
+ 1 file changed, 12 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/xmit.c b/drivers/net/wireless/ath/ath9k/xmit.c
+index 828b96bf55a2..e60d4737fc6e 100644
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -708,24 +708,20 @@ static void ath_tx_process_buffer(struct ath_softc *sc, struct ath_txq *txq,
+ 		ath_tx_count_airtime(sc, sta, bf, ts, tid->tidno);
+ 		if (ts->ts_status & (ATH9K_TXERR_FILT | ATH9K_TXERR_XRETRY))
+ 			tid->clear_ps_filter = true;
++	}
+ 
+-		if (!bf_isampdu(bf)) {
+-			if (!flush) {
+-				info = IEEE80211_SKB_CB(bf->bf_mpdu);
+-				memcpy(info->control.rates, bf->rates,
+-				       sizeof(info->control.rates));
+-				ath_tx_rc_status(sc, bf, ts, 1,
+-						 txok ? 0 : 1, txok);
+-				ath_dynack_sample_tx_ts(sc->sc_ah,
+-							bf->bf_mpdu, ts, sta);
+-			}
+-			ath_tx_complete_buf(sc, bf, txq, bf_head, sta,
+-					    ts, txok);
+-		} else {
+-			ath_tx_complete_aggr(sc, txq, bf, bf_head, sta,
+-					     tid, ts, txok);
++	if (!bf_isampdu(bf)) {
++		if (!flush) {
++			info = IEEE80211_SKB_CB(bf->bf_mpdu);
++			memcpy(info->control.rates, bf->rates,
++			       sizeof(info->control.rates));
++			ath_tx_rc_status(sc, bf, ts, 1, txok ? 0 : 1, txok);
++			ath_dynack_sample_tx_ts(sc->sc_ah, bf->bf_mpdu, ts,
++						sta);
+ 		}
+-	}
++		ath_tx_complete_buf(sc, bf, txq, bf_head, sta, ts, txok);
++	} else
++		ath_tx_complete_aggr(sc, txq, bf, bf_head, sta, tid, ts, txok);
+ 
+ 	if (!flush)
+ 		ath_txq_schedule(sc, txq);
+-- 
+2.25.1
+

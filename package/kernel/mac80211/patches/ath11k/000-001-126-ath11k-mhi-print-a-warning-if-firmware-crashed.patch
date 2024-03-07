@@ -1,0 +1,41 @@
+From a0bb091622d561ea9582403802b50b7d2778ce96 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Thu, 10 Dec 2020 16:05:19 +0200
+Subject: [PATCH 126/166] ath11k: mhi: print a warning if firmware crashed
+
+There was no way to detect if the firmware crashed so add a warning. At the
+moment the firmware is not restarted or anything like that, so when this
+happens ath11k modules need to be reloaded.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607609124-17250-2-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit fc46e1b2a24a0c85e8469576f66f9a991411bfc7)
+---
+ drivers/net/wireless/ath/ath11k/mhi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index 8a2068456a09..74f9956c603f 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -190,6 +190,15 @@ static void ath11k_mhi_op_runtime_put(struct mhi_controller *mhi_cntrl)
+ static void ath11k_mhi_op_status_cb(struct mhi_controller *mhi_cntrl,
+ 				    enum mhi_callback cb)
+ {
++	struct ath11k_base *ab = dev_get_drvdata(mhi_cntrl->cntrl_dev);
++
++	switch (cb) {
++	case MHI_CB_SYS_ERROR:
++		ath11k_warn(ab, "firmware crashed: MHI_CB_SYS_ERROR\n");
++		break;
++	default:
++		break;
++	}
+ }
+ 
+ static int ath11k_mhi_op_read_reg(struct mhi_controller *mhi_cntrl,
+-- 
+2.25.1
+

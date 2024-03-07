@@ -1,0 +1,32 @@
+From 3a7c28a46b2341063d5175e8b147f089f6be2ce6 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 17 Dec 2020 14:04:32 +0300
+Subject: [PATCH 10/93] ath11k: dp: clean up a variable name
+
+The "&ar->ab->base_lock" and "&ab->base_lock" locks are the same lock
+but it's nicer to use the same name consistently everywhere.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/X9s7QAHDM2OTIo3a@mwanda
+(cherry picked from commit abdcd4cbec42fd3fe7e6c2d076360b0bbf62173f)
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 920e5026a635..42328a06107b 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -1163,7 +1163,7 @@ int ath11k_dp_peer_rx_pn_replay_config(struct ath11k_vif *arvif,
+ 		}
+ 	}
+ 
+-	spin_unlock_bh(&ar->ab->base_lock);
++	spin_unlock_bh(&ab->base_lock);
+ 
+ 	return ret;
+ }
+-- 
+2.25.1
+

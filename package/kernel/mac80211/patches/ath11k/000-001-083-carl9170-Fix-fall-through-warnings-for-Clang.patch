@@ -1,0 +1,33 @@
+From e4d97fd33bc7d9f5b9a96309767043d45f177415 Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Tue, 8 Dec 2020 09:52:57 +0200
+Subject: [PATCH 083/166] carl9170: Fix fall-through warnings for Clang
+
+In preparation to enable -Wimplicit-fallthrough for Clang, fix a warning
+by explicitly adding a break statement instead of letting the code fall
+through to the next case.
+
+Link: https://github.com/KSPP/linux/issues/115
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/04257418814755f081fa0ac14a61b01328cdc4ed.1605896059.git.gustavoars@kernel.org
+(cherry picked from commit e2cb11165445eccec877c8cc77bb4e461cf3c561)
+---
+ drivers/net/wireless/ath/carl9170/tx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/carl9170/tx.c b/drivers/net/wireless/ath/carl9170/tx.c
+index 235cf77cd60c..6b8446ff48c8 100644
+--- a/drivers/net/wireless/ath/carl9170/tx.c
++++ b/drivers/net/wireless/ath/carl9170/tx.c
+@@ -840,6 +840,7 @@ static bool carl9170_tx_rts_check(struct ar9170 *ar,
+ 	case CARL9170_ERP_RTS:
+ 		if (likely(!multi))
+ 			return true;
++		break;
+ 
+ 	default:
+ 		break;
+-- 
+2.25.1
+

@@ -1,0 +1,36 @@
+From 9ad64061f0a8303e0ffdb7f193fd30d1ea97e114 Mon Sep 17 00:00:00 2001
+From: Jani Nikula <jani.nikula@intel.com>
+Date: Tue, 15 Dec 2020 20:46:06 -0800
+Subject: [PATCH 143/166] ath11k: make relay callbacks const
+
+Now that relay_open() accepts const callbacks, make relay callbacks
+const.
+
+Link: https://lkml.kernel.org/r/44e3d65b71025c462948d0c554061dc7b40ab488.1606153547.git.jani.nikula@intel.com
+Signed-off-by: Jani Nikula <jani.nikula@intel.com>
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Cc: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+(cherry picked from commit 36b0cefe901a06aab1d488c12c38b8076054bc12)
+---
+ drivers/net/wireless/ath/ath11k/spectral.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/spectral.c b/drivers/net/wireless/ath/ath11k/spectral.c
+index ac2a8cfdc1c0..1afe67759659 100644
+--- a/drivers/net/wireless/ath/ath11k/spectral.c
++++ b/drivers/net/wireless/ath/ath11k/spectral.c
+@@ -148,7 +148,7 @@ static int remove_buf_file_handler(struct dentry *dentry)
+ 	return 0;
+ }
+ 
+-static struct rchan_callbacks rfs_scan_cb = {
++static const struct rchan_callbacks rfs_scan_cb = {
+ 	.create_buf_file = create_buf_file_handler,
+ 	.remove_buf_file = remove_buf_file_handler,
+ };
+-- 
+2.25.1
+

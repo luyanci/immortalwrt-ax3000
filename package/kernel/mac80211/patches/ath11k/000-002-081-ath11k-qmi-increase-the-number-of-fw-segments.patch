@@ -1,0 +1,46 @@
+From a61958b4db2c24e73e6a99517633c31d48ef2b68 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 16 Feb 2021 09:15:53 +0200
+Subject: [PATCH 81/93] ath11k: qmi: increase the number of fw segments
+
+QCN9074 firmware uses 20MB of HOST DDR memory, fw requests
+the memory in segmnets of size 1MB/512KB/256KB.
+Increase the number of fw memory segments to 52.
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612946530-28504-4-git-send-email-akolli@codeaurora.org
+(cherry picked from commit fa5f473d764398a09f7deea3a042a1130ee50e90)
+---
+ drivers/net/wireless/ath/ath11k/qmi.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.h b/drivers/net/wireless/ath/ath11k/qmi.h
+index 7bad374cc23a..1797c3b59f48 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -23,7 +23,7 @@
+ #define ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074	0x02
+ #define ATH11K_QMI_WLANFW_MAX_TIMESTAMP_LEN_V01	32
+ #define ATH11K_QMI_RESP_LEN_MAX			8192
+-#define ATH11K_QMI_WLANFW_MAX_NUM_MEM_SEG_V01	32
++#define ATH11K_QMI_WLANFW_MAX_NUM_MEM_SEG_V01	52
+ #define ATH11K_QMI_CALDB_SIZE			0x480000
+ #define ATH11K_QMI_BDF_EXT_STR_LENGTH		0x20
+ 
+@@ -216,8 +216,8 @@ struct qmi_wlanfw_ind_register_resp_msg_v01 {
+ 	u64 fw_status;
+ };
+ 
+-#define QMI_WLANFW_REQUEST_MEM_IND_MSG_V01_MAX_LEN	1124
+-#define QMI_WLANFW_RESPOND_MEM_REQ_MSG_V01_MAX_LEN	548
++#define QMI_WLANFW_REQUEST_MEM_IND_MSG_V01_MAX_LEN	1824
++#define QMI_WLANFW_RESPOND_MEM_REQ_MSG_V01_MAX_LEN	888
+ #define QMI_WLANFW_RESPOND_MEM_RESP_MSG_V01_MAX_LEN	7
+ #define QMI_WLANFW_REQUEST_MEM_IND_V01			0x0035
+ #define QMI_WLANFW_RESPOND_MEM_REQ_V01			0x0036
+-- 
+2.25.1
+

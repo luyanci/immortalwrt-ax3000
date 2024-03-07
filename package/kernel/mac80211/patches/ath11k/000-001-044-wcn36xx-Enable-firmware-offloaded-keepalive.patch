@@ -1,0 +1,35 @@
+From c667e7a4e9691e48b81182b7152b1978643cbda3 Mon Sep 17 00:00:00 2001
+From: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Date: Tue, 3 Nov 2020 12:17:35 +0000
+Subject: [PATCH 044/166] wcn36xx: Enable firmware offloaded keepalive
+
+This patch calls wcn36xx_smd_keep_alive_req() on the STA patch immediately
+after associating with an AP.
+
+This will cause the firmware to send a NULL packet out to the AP every 30
+seconds, thus offloading keep-alive processing from the SoC to the
+firmware.
+
+Signed-off-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201103121735.291324-4-bryan.odonoghue@linaro.org
+(cherry picked from commit 5336fad96e8f8c36a3b7faef765f69efa9fafd35)
+---
+ drivers/net/wireless/ath/wcn36xx/main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/wcn36xx/main.c b/drivers/net/wireless/ath/wcn36xx/main.c
+index e924cc4acde0..5867bd9c2f64 100644
+--- a/drivers/net/wireless/ath/wcn36xx/main.c
++++ b/drivers/net/wireless/ath/wcn36xx/main.c
+@@ -910,6 +910,7 @@ static void wcn36xx_bss_info_changed(struct ieee80211_hw *hw,
+ 			 * place where AID is available.
+ 			 */
+ 			wcn36xx_smd_config_sta(wcn, vif, sta);
++			wcn36xx_enable_keep_alive_null_packet(wcn, vif);
+ 		} else {
+ 			wcn36xx_dbg(WCN36XX_DBG_MAC,
+ 				    "disassociated bss %pM vif %pM AID=%d\n",
+-- 
+2.25.1
+

@@ -1,0 +1,45 @@
+From e8c360022482b23ed28255ef41f2e154a3cef5a0 Mon Sep 17 00:00:00 2001
+From: Matteo Croce <mcroce@microsoft.com>
+Date: Mon, 8 Feb 2021 12:33:56 +0100
+Subject: [PATCH 64/93] cfg80211: remove unused callback
+
+The ieee80211 class registers a callback which actually does nothing.
+Given that the callback is optional, and all its accesses are protected
+by a NULL check, remove it entirely.
+
+Signed-off-by: Matteo Croce <mcroce@microsoft.com>
+Link: https://lore.kernel.org/r/20210208113356.4105-1-mcroce@linux.microsoft.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 258afa78661178d16288537ffe8ef863c7e5918a)
+---
+ net/wireless/sysfs.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/net/wireless/sysfs.c b/net/wireless/sysfs.c
+index 043762354a66..9b959e3b09c6 100644
+--- a/net/wireless/sysfs.c
++++ b/net/wireless/sysfs.c
+@@ -82,12 +82,6 @@ static void wiphy_dev_release(struct device *dev)
+ 	cfg80211_dev_free(rdev);
+ }
+ 
+-static int wiphy_uevent(struct device *dev, struct kobj_uevent_env *env)
+-{
+-	/* TODO, we probably need stuff here */
+-	return 0;
+-}
+-
+ #ifdef CONFIG_PM_SLEEP
+ static void cfg80211_leave_all(struct cfg80211_registered_device *rdev)
+ {
+@@ -162,7 +156,6 @@ struct class ieee80211_class = {
+ 	.dev_attrs = ieee80211_dev_attrs,
+ #endif
+	
+-	.dev_uevent = wiphy_uevent,
+ 	.pm = WIPHY_PM_OPS,
+ 	.ns_type = &net_ns_type_operations,
+ 	.namespace = wiphy_namespace,
+-- 
+2.25.1
+

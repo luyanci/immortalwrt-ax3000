@@ -1,0 +1,29 @@
+From e4d73645cbbc6b8f640b9b12a6972201866dffb5 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Mon, 11 Jan 2021 19:49:31 +0200
+Subject: [PATCH 14/93] ath10k: remove unused struct ath10k::dev_type
+
+It's unused so let's get rid of it. Compile tested only, no functional changes.
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1608574994-30706-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 4c239f012f7b38012767100453ac8c2cc45cbc92)
+---
+ drivers/net/wireless/ath/ath10k/core.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/core.h b/drivers/net/wireless/ath/ath10k/core.h
+index f4be6bfb2539..cd206b16d68f 100644
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -1019,7 +1019,6 @@ struct ath10k {
+ 	enum ath10k_hw_rev hw_rev;
+ 	u16 dev_id;
+ 	u32 chip_id;
+-	enum ath10k_dev_type dev_type;
+ 	u32 target_version;
+ 	u8 fw_version_major;
+ 	u32 fw_version_minor;
+-- 
+2.25.1
+

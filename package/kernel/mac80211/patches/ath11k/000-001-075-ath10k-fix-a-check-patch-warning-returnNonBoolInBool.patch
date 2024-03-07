@@ -1,0 +1,39 @@
+From 5494f96bea083970af8c75676702cc224bfcbdbb Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Mon, 7 Dec 2020 16:15:58 +0200
+Subject: [PATCH 075/166] ath10k: fix a check patch warning
+ returnNonBoolInBooleanFunction of sdio.c
+
+cppcheck possible warnings: (new ones prefixed by >>, may not real problems)
+drivers/net/wireless/ath/ath10k/sdio.c:2234:2:
+warning: Non-boolean value returned from function returning bool [returnNonBoolInBooleanFunction]
+return param & HI_OPTION_SDIO_CRASH_DUMP_ENHANCEMENT_FW;
+
+Reported-by: kernel test robot <rong.a.chen@intel.com>
+
+Tested-on: QCA6174 hw3.2 SDIO WLAN.RMH.4.4.1-00049
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1606103240-9868-1-git-send-email-wgong@codeaurora.org
+(cherry picked from commit 7f881a721716916e81bd4011589c2af6833c81d1)
+---
+ drivers/net/wireless/ath/ath10k/sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/sdio.c b/drivers/net/wireless/ath/ath10k/sdio.c
+index aa1f86028f01..15474c152e7f 100644
+--- a/drivers/net/wireless/ath/ath10k/sdio.c
++++ b/drivers/net/wireless/ath/ath10k/sdio.c
+@@ -2237,7 +2237,7 @@ static bool ath10k_sdio_is_fast_dump_supported(struct ath10k *ar)
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_SDIO, "sdio hi_option_flag2 %x\n", param);
+ 
+-	return param & HI_OPTION_SDIO_CRASH_DUMP_ENHANCEMENT_FW;
++	return !!(param & HI_OPTION_SDIO_CRASH_DUMP_ENHANCEMENT_FW);
+ }
+ 
+ static void ath10k_sdio_dump_registers(struct ath10k *ar,
+-- 
+2.25.1
+

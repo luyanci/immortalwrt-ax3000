@@ -1,0 +1,48 @@
+From 5e7532c78f68192f4ab746a37b6a86b4e0140e38 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Mon, 9 Nov 2020 10:57:42 +0100
+Subject: [PATCH 052/166] carl9170: remove WDS code
+
+The ability to reach this code was hidden behind
+CPTCFG_WIRELESS_WDS, which was just removed. Clean
+up the driver accordingly.
+
+Link: https://lore.kernel.org/r/20201109105103.1e9c64789510.Ifc4f55c8099e7b7c31a8059befe102523d65e945@changeid
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit bcc857f8d1efcc65d2c49983bd6306aafd039cde)
+---
+ drivers/net/wireless/ath/carl9170/mac.c  | 4 ----
+ drivers/net/wireless/ath/carl9170/main.c | 1 -
+ 2 files changed, 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/carl9170/mac.c b/drivers/net/wireless/ath/carl9170/mac.c
+index b2eeb9fd68d2..6cdbee5beb07 100644
+--- a/drivers/net/wireless/ath/carl9170/mac.c
++++ b/drivers/net/wireless/ath/carl9170/mac.c
+@@ -329,10 +329,6 @@ int carl9170_set_operating_mode(struct ar9170 *ar)
+ 			/* iwlagn 802.11n STA Workaround */
+ 			rx_ctrl |= AR9170_MAC_RX_CTRL_PASS_TO_HOST;
+ 			break;
+-		case NL80211_IFTYPE_WDS:
+-			cam_mode |= AR9170_MAC_CAM_AP_WDS;
+-			rx_ctrl |= AR9170_MAC_RX_CTRL_PASS_TO_HOST;
+-			break;
+ 		case NL80211_IFTYPE_STATION:
+ 			cam_mode |= AR9170_MAC_CAM_STA;
+ 			rx_ctrl |= AR9170_MAC_RX_CTRL_PASS_TO_HOST;
+diff --git a/drivers/net/wireless/ath/carl9170/main.c b/drivers/net/wireless/ath/carl9170/main.c
+index dbef9d8fc893..cca3b086aa70 100644
+--- a/drivers/net/wireless/ath/carl9170/main.c
++++ b/drivers/net/wireless/ath/carl9170/main.c
+@@ -646,7 +646,6 @@ static int carl9170_op_add_interface(struct ieee80211_hw *hw,
+ 		case NL80211_IFTYPE_MESH_POINT:
+ 		case NL80211_IFTYPE_AP:
+ 			if ((vif->type == NL80211_IFTYPE_STATION) ||
+-			    (vif->type == NL80211_IFTYPE_WDS) ||
+ 			    (vif->type == NL80211_IFTYPE_AP) ||
+ 			    (vif->type == NL80211_IFTYPE_MESH_POINT))
+ 				break;
+-- 
+2.25.1
+

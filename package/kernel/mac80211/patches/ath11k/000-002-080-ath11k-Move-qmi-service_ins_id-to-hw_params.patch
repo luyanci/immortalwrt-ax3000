@@ -1,0 +1,91 @@
+From 2a9e4fb280b4df4e45c42bb52e9b882c6b28a82b Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 16 Feb 2021 09:15:48 +0200
+Subject: [PATCH 80/93] ath11k: Move qmi service_ins_id to hw_params
+
+qmi service_ins_id is unique for QCA6390 and QCN9074,
+this is needed for adding QCN9074 support. No functional
+changes.
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612946530-28504-3-git-send-email-akolli@codeaurora.org
+(cherry picked from commit 16001e4b2e681b8fb5e7bc50db5522081d46347a)
+---
+ drivers/net/wireless/ath/ath11k/ahb.c  | 2 +-
+ drivers/net/wireless/ath/ath11k/core.c | 3 +++
+ drivers/net/wireless/ath/ath11k/hw.h   | 1 +
+ drivers/net/wireless/ath/ath11k/pci.c  | 2 +-
+ 4 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/ahb.c b/drivers/net/wireless/ath/ath11k/ahb.c
+index d4ef45cd0685..8c9c781afc3e 100644
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -373,7 +373,7 @@ static void ath11k_ahb_init_qmi_ce_config(struct ath11k_base *ab)
+ 	cfg->tgt_ce = ab->hw_params.target_ce_config;
+ 	cfg->svc_to_ce_map_len = ab->hw_params.svc_to_ce_map_len;
+ 	cfg->svc_to_ce_map = ab->hw_params.svc_to_ce_map;
+-	ab->qmi.service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074;
++	ab->qmi.service_ins_id = ab->hw_params.qmi_service_ins_id;
+ }
+ 
+ static void ath11k_ahb_free_ext_irq(struct ath11k_base *ab)
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 350b7913622c..9ccc7231afa0 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -45,6 +45,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.ring_mask = &ath11k_hw_ring_mask_ipq8074,
+ 		.internal_sleep_clock = false,
+ 		.regs = &ipq8074_regs,
++		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074,
+ 		.host_ce_config = ath11k_host_ce_config_ipq8074,
+ 		.ce_count = 12,
+ 		.target_ce_config = ath11k_target_ce_config_wlan_ipq8074,
+@@ -83,6 +84,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.ring_mask = &ath11k_hw_ring_mask_ipq8074,
+ 		.internal_sleep_clock = false,
+ 		.regs = &ipq8074_regs,
++		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074,
+ 		.host_ce_config = ath11k_host_ce_config_ipq8074,
+ 		.ce_count = 12,
+ 		.target_ce_config = ath11k_target_ce_config_wlan_ipq8074,
+@@ -121,6 +123,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.ring_mask = &ath11k_hw_ring_mask_qca6390,
+ 		.internal_sleep_clock = true,
+ 		.regs = &qca6390_regs,
++		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCA6390,
+ 		.host_ce_config = ath11k_host_ce_config_qca6390,
+ 		.ce_count = 9,
+ 		.target_ce_config = ath11k_target_ce_config_wlan_qca6390,
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 8af0034fdb05..94c36e6149cf 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -134,6 +134,7 @@ struct ath11k_hw_params {
+ 	bool internal_sleep_clock;
+ 
+ 	const struct ath11k_hw_regs *regs;
++	u32 qmi_service_ins_id;
+ 	const struct ce_attr *host_ce_config;
+ 	u32 ce_count;
+ 	const struct ce_pipe_config *target_ce_config;
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 046eac75eab8..ea7715484de0 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -743,7 +743,7 @@ static void ath11k_pci_init_qmi_ce_config(struct ath11k_base *ab)
+ 
+ 	cfg->svc_to_ce_map = ab->hw_params.svc_to_ce_map;
+ 	cfg->svc_to_ce_map_len = ab->hw_params.svc_to_ce_map_len;
+-	ab->qmi.service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCA6390;
++	ab->qmi.service_ins_id = ab->hw_params.qmi_service_ins_id;
+ 
+ 	ath11k_ce_get_shadow_config(ab, &cfg->shadow_reg_v2,
+ 				    &cfg->shadow_reg_v2_len);
+-- 
+2.25.1
+

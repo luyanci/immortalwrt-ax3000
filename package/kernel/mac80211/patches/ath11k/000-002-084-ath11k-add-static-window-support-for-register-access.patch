@@ -1,0 +1,178 @@
+From 611e05ff8de01f68891837fdaf6ef48bda2abd19 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Tue, 16 Feb 2021 09:16:17 +0200
+Subject: [PATCH 84/93] ath11k: add static window support for register access
+
+Three window slots can be configure. First window slot
+dedicate for dynamic selection and remaining two slots
+dedicate for static selection. To optimise the window
+selection, frequent registers (UMAC, CE) are configure
+in static window slot. so that we minimise the window
+selection. Other registers are configure in dynamic window
+slot. Get the window start address from the respective
+offset and access the read/write register.
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612946530-28504-7-git-send-email-akolli@codeaurora.org
+(cherry picked from commit 480a73610c95511e42fb7d0359b523f66883e51a)
+---
+ drivers/net/wireless/ath/ath11k/core.h |  1 +
+ drivers/net/wireless/ath/ath11k/hal.h  |  4 ++
+ drivers/net/wireless/ath/ath11k/pci.c  | 72 ++++++++++++++++++++++----
+ 3 files changed, 68 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 9a8fb23577b0..912294f7657c 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -608,6 +608,7 @@ struct ath11k_bus_params {
+ 	bool m3_fw_support;
+ 	bool fixed_bdf_addr;
+ 	bool fixed_mem_region;
++	bool static_window_map;
+ };
+ 
+ /* IPQ8074 HW channel counters frequency value in hertz */
+diff --git a/drivers/net/wireless/ath/ath11k/hal.h b/drivers/net/wireless/ath/ath11k/hal.h
+index 1f1b29cd0aa3..3f5687ebe1fc 100644
+--- a/drivers/net/wireless/ath/ath11k/hal.h
++++ b/drivers/net/wireless/ath/ath11k/hal.h
+@@ -39,6 +39,7 @@ struct ath11k_base;
+ #define HAL_SHADOW_REG(x) (HAL_SHADOW_BASE_ADDR + (4 * (x)))
+ 
+ /* WCSS Relative address */
++#define HAL_SEQ_WCSS_UMAC_OFFSET		0x00a00000
+ #define HAL_SEQ_WCSS_UMAC_REO_REG		0x00a38000
+ #define HAL_SEQ_WCSS_UMAC_TCL_REG		0x00a44000
+ #define HAL_SEQ_WCSS_UMAC_CE0_SRC_REG		0x00a00000
+@@ -47,6 +48,9 @@ struct ath11k_base;
+ #define HAL_SEQ_WCSS_UMAC_CE1_DST_REG		0x00a03000
+ #define HAL_SEQ_WCSS_UMAC_WBM_REG		0x00a34000
+ 
++#define HAL_CE_WFSS_CE_REG_BASE			0x01b80000
++#define HAL_WLAON_REG_BASE			0x01f80000
++
+ /* SW2TCL(x) R0 ring configuration address */
+ #define HAL_TCL1_RING_CMN_CTRL_REG		0x00000014
+ #define HAL_TCL1_RING_DSCP_TID_MAP		0x0000002c
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index ea7715484de0..88d0e5be17f5 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -133,9 +133,38 @@ static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offse
+ 	}
+ }
+ 
++static inline void ath11k_pci_select_static_window(struct ath11k_pci *ab_pci)
++{
++	u32 umac_window = FIELD_GET(WINDOW_VALUE_MASK, HAL_SEQ_WCSS_UMAC_OFFSET);
++	u32 ce_window = FIELD_GET(WINDOW_VALUE_MASK, HAL_CE_WFSS_CE_REG_BASE);
++	u32 window;
++
++	window = (umac_window << 12) | (ce_window << 6);
++
++	iowrite32(WINDOW_ENABLE_BIT | window, ab_pci->ab->mem + WINDOW_REG_ADDRESS);
++}
++
++static inline u32 ath11k_pci_get_window_start(struct ath11k_base *ab,
++					      u32 offset)
++{
++	u32 window_start;
++
++	/* If offset lies within DP register range, use 3rd window */
++	if ((offset ^ HAL_SEQ_WCSS_UMAC_OFFSET) < WINDOW_RANGE_MASK)
++		window_start = 3 * WINDOW_START;
++	/* If offset lies within CE register range, use 2nd window */
++	else if ((offset ^ HAL_CE_WFSS_CE_REG_BASE) < WINDOW_RANGE_MASK)
++		window_start = 2 * WINDOW_START;
++	else
++		window_start = WINDOW_START;
++
++	return window_start;
++}
++
+ void ath11k_pci_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
++	u32 window_start;
+ 
+ 	/* for offset beyond BAR + 4K - 32, may
+ 	 * need to wakeup MHI to access.
+@@ -147,10 +176,21 @@ void ath11k_pci_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ 	if (offset < WINDOW_START) {
+ 		iowrite32(value, ab->mem  + offset);
+ 	} else {
+-		spin_lock_bh(&ab_pci->window_lock);
+-		ath11k_pci_select_window(ab_pci, offset);
+-		iowrite32(value, ab->mem + WINDOW_START + (offset & WINDOW_RANGE_MASK));
+-		spin_unlock_bh(&ab_pci->window_lock);
++		if (ab->bus_params.static_window_map)
++			window_start = ath11k_pci_get_window_start(ab, offset);
++		else
++			window_start = WINDOW_START;
++
++		if (window_start == WINDOW_START) {
++			spin_lock_bh(&ab_pci->window_lock);
++			ath11k_pci_select_window(ab_pci, offset);
++			iowrite32(value, ab->mem + window_start +
++				  (offset & WINDOW_RANGE_MASK));
++			spin_unlock_bh(&ab_pci->window_lock);
++		} else {
++			iowrite32(value, ab->mem + window_start +
++				  (offset & WINDOW_RANGE_MASK));
++		}
+ 	}
+ 
+ 	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+@@ -161,7 +201,7 @@ void ath11k_pci_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ u32 ath11k_pci_read32(struct ath11k_base *ab, u32 offset)
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+-	u32 val;
++	u32 val, window_start;
+ 
+ 	/* for offset beyond BAR + 4K - 32, may
+ 	 * need to wakeup MHI to access.
+@@ -173,10 +213,21 @@ u32 ath11k_pci_read32(struct ath11k_base *ab, u32 offset)
+ 	if (offset < WINDOW_START) {
+ 		val = ioread32(ab->mem + offset);
+ 	} else {
+-		spin_lock_bh(&ab_pci->window_lock);
+-		ath11k_pci_select_window(ab_pci, offset);
+-		val = ioread32(ab->mem + WINDOW_START + (offset & WINDOW_RANGE_MASK));
+-		spin_unlock_bh(&ab_pci->window_lock);
++		if (ab->bus_params.static_window_map)
++			window_start = ath11k_pci_get_window_start(ab, offset);
++		else
++			window_start = WINDOW_START;
++
++		if (window_start == WINDOW_START) {
++			spin_lock_bh(&ab_pci->window_lock);
++			ath11k_pci_select_window(ab_pci, offset);
++			val = ioread32(ab->mem + window_start +
++				       (offset & WINDOW_RANGE_MASK));
++			spin_unlock_bh(&ab_pci->window_lock);
++		} else {
++			val = ioread32(ab->mem + window_start +
++				       (offset & WINDOW_RANGE_MASK));
++		}
+ 	}
+ 
+ 	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+@@ -936,6 +987,9 @@ static int ath11k_pci_power_up(struct ath11k_base *ab)
+ 		return ret;
+ 	}
+ 
++	if (ab->bus_params.static_window_map)
++		ath11k_pci_select_static_window(ab_pci);
++
+ 	return 0;
+ }
+ 
+-- 
+2.25.1
+

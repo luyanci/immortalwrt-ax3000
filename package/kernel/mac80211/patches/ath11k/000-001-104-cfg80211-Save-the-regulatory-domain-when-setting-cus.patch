@@ -1,0 +1,47 @@
+From d3b6983c431fe8639627f0477f235a26db29b422 Mon Sep 17 00:00:00 2001
+From: Ilan Peer <ilan.peer@intel.com>
+Date: Sun, 29 Nov 2020 17:30:51 +0200
+Subject: [PATCH 104/166] cfg80211: Save the regulatory domain when setting
+ custom regulatory
+
+When custom regulatory was set, only the channels setting was updated, but
+the regulatory domain was not saved. Fix it by saving it.
+
+Signed-off-by: Ilan Peer <ilan.peer@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201129172929.290fa5c5568a.Ic5732aa64de6ee97ae3578bd5779fc723ba489d1@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit beee246951571cc5452176f3dbfe9aa5a10ba2b9)
+---
+ net/wireless/reg.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index c037960e5a1a..bb72447ad960 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -2547,6 +2547,7 @@ static void handle_band_custom(struct wiphy *wiphy,
+ void wiphy_apply_custom_regulatory(struct wiphy *wiphy,
+ 				   const struct ieee80211_regdomain *regd)
+ {
++	const struct ieee80211_regdomain *new_regd, *tmp;
+ 	enum nl80211_band band;
+ 	unsigned int bands_set = 0;
+ 
+@@ -2566,6 +2567,13 @@ void wiphy_apply_custom_regulatory(struct wiphy *wiphy,
+ 	 * on your device's supported bands.
+ 	 */
+ 	WARN_ON(!bands_set);
++	new_regd = reg_copy_regd(regd);
++	if (IS_ERR(new_regd))
++		return;
++
++	tmp = get_wiphy_regdom(wiphy);
++	rcu_assign_pointer(wiphy->regd, new_regd);
++	rcu_free_regdom(tmp);
+ }
+ EXPORT_SYMBOL(wiphy_apply_custom_regulatory);
+ 
+-- 
+2.25.1
+

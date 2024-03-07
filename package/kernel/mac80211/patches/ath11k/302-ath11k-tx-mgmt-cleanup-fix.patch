@@ -1,0 +1,39 @@
+From de7df710540275b29231a989a3a65af9f6cf7659 Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Wed, 31 Mar 2021 07:59:52 +0530
+Subject: [PATCH] ath11k: Avoid NULL ptr access during mgmt tx cleanup
+
+Currently skb_cb values such as ar,vif is not filled during
+WMI mgmt tx. Though this is generally not used during callback,
+On interface removal, the remaining idr cleanup callback
+uses the ar ptr from skb_cb from mgmt txmgmt_idr. Hence
+fill them during tx call for proper usage.
+
+Also free the skb which is missing currently in these
+callbacks.
+
+Crash_info:
+
+[19282.489476] Unable to handle kernel NULL pointer dereference at virtual address 00000000
+[19282.489515] pgd = 91eb8000
+[19282.496702] [00000000] *pgd=00000000
+[19282.502524] Internal error: Oops: 5 [#1] PREEMPT SMP ARM
+[19282.783728] PC is at ath11k_mac_vif_txmgmt_idr_remove+0x28/0xd8 [ath11k]
+[19282.789170] LR is at idr_for_each+0xa0/0xc8
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5767,6 +5773,8 @@ static int ath11k_mac_mgmt_tx_wmi(struct
+ 	}
+ 
+ 	ATH11K_SKB_CB(skb)->paddr = paddr;
++	ATH11K_SKB_CB(skb)->vif = arvif->vif;
++	ATH11K_SKB_CB(skb)->ar = ar;
+ 
+ 	if (ieee80211_is_qos_nullfunc(hdr->frame_control)) {
+ 		ret = ath11k_wmi_qos_null_send(ar, arvif->vdev_id, buf_id, skb);

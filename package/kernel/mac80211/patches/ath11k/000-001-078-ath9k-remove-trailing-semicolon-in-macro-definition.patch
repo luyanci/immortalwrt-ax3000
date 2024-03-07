@@ -1,0 +1,45 @@
+From 6e054a9b2ca405ecf36873abc9f584679d80ffa3 Mon Sep 17 00:00:00 2001
+From: Tom Rix <trix@redhat.com>
+Date: Mon, 7 Dec 2020 16:16:24 +0200
+Subject: [PATCH 078/166] ath9k: remove trailing semicolon in macro definition
+
+The macro use will already have a semicolon.
+
+Signed-off-by: Tom Rix <trix@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201127175336.2752730-1-trix@redhat.com
+(cherry picked from commit 5a5b820d18c76b3a8089c44d63bccd1b52f743a5)
+---
+ drivers/net/wireless/ath/ath9k/common-debug.c | 2 +-
+ drivers/net/wireless/ath/ath9k/dfs_debug.c    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/common-debug.c b/drivers/net/wireless/ath/ath9k/common-debug.c
+index 53ca4b063eb9..7aefb79f6bed 100644
+--- a/drivers/net/wireless/ath/ath9k/common-debug.c
++++ b/drivers/net/wireless/ath/ath9k/common-debug.c
+@@ -189,7 +189,7 @@ static ssize_t read_file_phy_err(struct file *file, char __user *user_buf,
+ {
+ #define PHY_ERR(s, p) \
+ 	len += scnprintf(buf + len, size - len, "%22s : %10u\n", s, \
+-			 rxstats->phy_err_stats[p]);
++			 rxstats->phy_err_stats[p])
+ 
+ 	struct ath_rx_stats *rxstats = file->private_data;
+ 	char *buf;
+diff --git a/drivers/net/wireless/ath/ath9k/dfs_debug.c b/drivers/net/wireless/ath/ath9k/dfs_debug.c
+index 3251c9abe270..2a79c2fa8415 100644
+--- a/drivers/net/wireless/ath/ath9k/dfs_debug.c
++++ b/drivers/net/wireless/ath/ath9k/dfs_debug.c
+@@ -26,7 +26,7 @@ static struct ath_dfs_pool_stats dfs_pool_stats = { 0 };
+ 
+ #define ATH9K_DFS_STAT(s, p) \
+ 	len += scnprintf(buf + len, size - len, "%28s : %10u\n", s, \
+-			 sc->debug.stats.dfs_stats.p);
++			 sc->debug.stats.dfs_stats.p)
+ #define ATH9K_DFS_POOL_STAT(s, p) \
+ 	len += scnprintf(buf + len, size - len, "%28s : %10u\n", s, \
+ 			 dfs_pool_stats.p);
+-- 
+2.25.1
+

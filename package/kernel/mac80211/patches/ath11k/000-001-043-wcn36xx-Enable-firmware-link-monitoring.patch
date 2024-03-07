@@ -1,0 +1,31 @@
+From bb35171ba6786934dce74ac4b71cd7d5ddd977ac Mon Sep 17 00:00:00 2001
+From: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Date: Tue, 3 Nov 2020 12:17:34 +0000
+Subject: [PATCH 043/166] wcn36xx: Enable firmware link monitoring
+
+This patch switches on CONNECTION_MONITOR. Once done it is up to the
+firmware to send keep alive and to monitor the link state.
+
+Signed-off-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201103121735.291324-3-bryan.odonoghue@linaro.org
+(cherry picked from commit 8def9ec46a5fafc0abcf34489a9e8a787bca984d)
+---
+ drivers/net/wireless/ath/wcn36xx/main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/wcn36xx/main.c b/drivers/net/wireless/ath/wcn36xx/main.c
+index 706728fba72d..e924cc4acde0 100644
+--- a/drivers/net/wireless/ath/wcn36xx/main.c
++++ b/drivers/net/wireless/ath/wcn36xx/main.c
+@@ -1246,6 +1246,7 @@ static int wcn36xx_init_ieee80211(struct wcn36xx *wcn)
+ 	ieee80211_hw_set(wcn->hw, HAS_RATE_CONTROL);
+ 	ieee80211_hw_set(wcn->hw, SINGLE_SCAN_ON_ALL_BANDS);
+ 	ieee80211_hw_set(wcn->hw, REPORTS_TX_ACK_STATUS);
++	ieee80211_hw_set(wcn->hw, CONNECTION_MONITOR);
+ 
+ 	wcn->hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 		BIT(NL80211_IFTYPE_AP) |
+-- 
+2.25.1
+

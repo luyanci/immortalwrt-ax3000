@@ -1,0 +1,38 @@
+From e9bfe4cfdf692dabf1bc2aa77c361d257948d817 Mon Sep 17 00:00:00 2001
+From: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Date: Wed, 4 Nov 2020 10:18:23 +0400
+Subject: [PATCH 089/166] ath9k_htc: adhere to the DONT_REORDER transmit flag
+
+Assure that frames with the fixed order flag are not reordered
+relative to each other. This is accomplished by transmitting them
+using a fixed priority independent of their QoS field.
+
+Signed-off-by: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201104061823.197407-6-Mathy.Vanhoef@kuleuven.be
+(cherry picked from commit 8a71f34bb251d59e9d577df196c450cec14773ff)
+---
+ drivers/net/wireless/ath/ath9k/htc_drv_txrx.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
+index 0bdc4dcb7b8f..8e69e8989f6d 100644
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
+@@ -297,7 +297,12 @@ static void ath9k_htc_tx_data(struct ath9k_htc_priv *priv,
+ 		tx_hdr.data_type = ATH9K_HTC_NORMAL;
+ 	}
+ 
+-	if (ieee80211_is_data_qos(hdr->frame_control)) {
++	/* Transmit all frames that should not be reordered relative
++	 * to each other using the same priority. For other QoS data
++	 * frames extract the priority from the header.
++	 */
++	if (!(tx_info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER) &&
++	    ieee80211_is_data_qos(hdr->frame_control)) {
+ 		qc = ieee80211_get_qos_ctl(hdr);
+ 		tx_hdr.tidno = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
+ 	}
+-- 
+2.25.1
+

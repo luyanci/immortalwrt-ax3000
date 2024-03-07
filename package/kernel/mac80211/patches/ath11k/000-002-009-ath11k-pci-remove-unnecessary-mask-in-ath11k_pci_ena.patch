@@ -1,0 +1,34 @@
+From 934ff6f02d59f3ab1a35fca4988abe510b75110e Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Wed, 16 Dec 2020 20:24:11 +0200
+Subject: [PATCH 09/93] ath11k: pci: remove unnecessary mask in
+ ath11k_pci_enable_ltssm()
+
+0x10 is a leftover and unnecessary, GCC_GCC_PCIE_HOT_RST_VAL is already defined
+to 0x10.
+
+No functional changes, compile tested only.
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1608143051-5386-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 562934ada52a5a915d682aae22340ed48b7221b7)
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 20b415cd96c4..78478b2b3ba5 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -328,7 +328,7 @@ static void ath11k_pci_enable_ltssm(struct ath11k_base *ab)
+ 	ath11k_dbg(ab, ATH11K_DBG_PCI, "pci ltssm 0x%x\n", val);
+ 
+ 	val = ath11k_pci_read32(ab, GCC_GCC_PCIE_HOT_RST);
+-	val |= GCC_GCC_PCIE_HOT_RST_VAL | 0x10;
++	val |= GCC_GCC_PCIE_HOT_RST_VAL;
+ 	ath11k_pci_write32(ab, GCC_GCC_PCIE_HOT_RST, val);
+ 	val = ath11k_pci_read32(ab, GCC_GCC_PCIE_HOT_RST);
+ 
+-- 
+2.25.1
+

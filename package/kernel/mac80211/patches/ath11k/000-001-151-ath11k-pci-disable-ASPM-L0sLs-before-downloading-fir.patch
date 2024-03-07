@@ -1,0 +1,113 @@
+From 415a94643cf2fb323d33c4a5e5ee358da22c2822 Mon Sep 17 00:00:00 2001
+From: Carl Huang <cjhuang@codeaurora.org>
+Date: Thu, 17 Dec 2020 17:22:10 +0200
+Subject: [PATCH 151/166] ath11k: pci: disable ASPM L0sLs before downloading
+ firmware
+
+Sometimes QCA6390 doesn't switch to amss state as device enters
+L1ss state, so disable L0sL1s during firmware downloading.
+Driver recovers the ASPM to default value in start callback
+or powerdown callback.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Carl Huang <cjhuang@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1608218530-15426-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit e9603f4bdcc04417f1c7b3585e63654819dc11f6)
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 36 +++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/pci.h |  2 ++
+ 2 files changed, 38 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 9f9a824a4c2d..20b415cd96c4 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -886,6 +886,32 @@ static void ath11k_pci_free_region(struct ath11k_pci *ab_pci)
+ 		pci_disable_device(pci_dev);
+ }
+ 
++static void ath11k_pci_aspm_disable(struct ath11k_pci *ab_pci)
++{
++	struct ath11k_base *ab = ab_pci->ab;
++
++	pcie_capability_read_word(ab_pci->pdev, PCI_EXP_LNKCTL,
++				  &ab_pci->link_ctl);
++
++	ath11k_dbg(ab, ATH11K_DBG_PCI, "pci link_ctl 0x%04x L0s %d L1 %d\n",
++		   ab_pci->link_ctl,
++		   u16_get_bits(ab_pci->link_ctl, PCI_EXP_LNKCTL_ASPM_L0S),
++		   u16_get_bits(ab_pci->link_ctl, PCI_EXP_LNKCTL_ASPM_L1));
++
++	/* disable L0s and L1 */
++	pcie_capability_write_word(ab_pci->pdev, PCI_EXP_LNKCTL,
++				   ab_pci->link_ctl & ~PCI_EXP_LNKCTL_ASPMC);
++
++	set_bit(ATH11K_PCI_ASPM_RESTORE, &ab_pci->flags);
++}
++
++static void ath11k_pci_aspm_restore(struct ath11k_pci *ab_pci)
++{
++	if (test_and_clear_bit(ATH11K_PCI_ASPM_RESTORE, &ab_pci->flags))
++		pcie_capability_write_word(ab_pci->pdev, PCI_EXP_LNKCTL,
++					   ab_pci->link_ctl);
++}
++
+ static int ath11k_pci_power_up(struct ath11k_base *ab)
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+@@ -895,6 +921,11 @@ static int ath11k_pci_power_up(struct ath11k_base *ab)
+ 	clear_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags);
+ 	ath11k_pci_sw_reset(ab_pci->ab, true);
+ 
++	/* Disable ASPM during firmware download due to problems switching
++	 * to AMSS state.
++	 */
++	ath11k_pci_aspm_disable(ab_pci);
++
+ 	ret = ath11k_mhi_start(ab_pci);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to start mhi: %d\n", ret);
+@@ -908,6 +939,9 @@ static void ath11k_pci_power_down(struct ath11k_base *ab)
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+ 
++	/* restore aspm in case firmware bootup fails */
++	ath11k_pci_aspm_restore(ab_pci);
++
+ 	ath11k_pci_force_wake(ab_pci->ab);
+ 	ath11k_mhi_stop(ab_pci);
+ 	clear_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags);
+@@ -965,6 +999,8 @@ static int ath11k_pci_start(struct ath11k_base *ab)
+ 
+ 	set_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags);
+ 
++	ath11k_pci_aspm_restore(ab_pci);
++
+ 	ath11k_pci_ce_irqs_enable(ab);
+ 	ath11k_ce_rx_post_buf(ab);
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/pci.h b/drivers/net/wireless/ath/ath11k/pci.h
+index 0432a702416b..fe44d0dfce19 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.h
++++ b/drivers/net/wireless/ath/ath11k/pci.h
+@@ -63,6 +63,7 @@ struct ath11k_msi_config {
+ enum ath11k_pci_flags {
+ 	ATH11K_PCI_FLAG_INIT_DONE,
+ 	ATH11K_PCI_FLAG_IS_MSI_64,
++	ATH11K_PCI_ASPM_RESTORE,
+ };
+ 
+ struct ath11k_pci {
+@@ -80,6 +81,7 @@ struct ath11k_pci {
+ 
+ 	/* enum ath11k_pci_flags */
+ 	unsigned long flags;
++	u16 link_ctl;
+ };
+ 
+ static inline struct ath11k_pci *ath11k_pci_priv(struct ath11k_base *ab)
+-- 
+2.25.1
+

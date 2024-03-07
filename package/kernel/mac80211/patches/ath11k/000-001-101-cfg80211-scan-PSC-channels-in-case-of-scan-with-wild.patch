@@ -1,0 +1,65 @@
+From e85b7aacf3da918069e2ecfb993764fde50d2101 Mon Sep 17 00:00:00 2001
+From: Ayala Beker <ayala.beker@intel.com>
+Date: Sun, 29 Nov 2020 17:30:48 +0200
+Subject: [PATCH 101/166] cfg80211: scan PSC channels in case of scan with
+ wildcard SSID
+
+In case of scan request with wildcard SSID, or in case of more
+than one SSID in scan request, need to scan PSC channels even though
+all the co-located APs found during the legacy bands scan indicated
+that all the APs in their ESS are co-located, as we might find different
+networks on the PSC channels.
+
+Signed-off-by: Ayala Beker <ayala.beker@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201129172929.736415a9ca5d.If5b3578ae85e11a707a5da07e66ba85928ba702c@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit d590a125eeb4e161a27527342ae57e3d7d778455)
+---
+ net/wireless/scan.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/net/wireless/scan.c b/net/wireless/scan.c
+index 3409f37d838b..5f92d85acf45 100644
+--- a/net/wireless/scan.c
++++ b/net/wireless/scan.c
+@@ -726,7 +726,7 @@ static int cfg80211_scan_6ghz(struct cfg80211_registered_device *rdev)
+ 	int n_channels, count = 0, err;
+ 	struct cfg80211_scan_request *request, *rdev_req = rdev->scan_req;
+ 	LIST_HEAD(coloc_ap_list);
+-	bool need_scan_psc;
++	bool need_scan_psc = true;
+ 	const struct ieee80211_sband_iftype_data *iftd;
+ 
+ 	rdev_req->scan_6ghz = true;
+@@ -770,20 +770,18 @@ static int cfg80211_scan_6ghz(struct cfg80211_registered_device *rdev)
+ 		(void *)&request->channels[n_channels];
+ 
+ 	/*
+-	 * PSC channels should not be scanned if all the reported co-located APs
+-	 * are indicating that all APs in the same ESS are co-located
++	 * PSC channels should not be scanned in case of direct scan with 1 SSID
++	 * and at least one of the reported co-located APs with same SSID
++	 * indicating that all APs in the same ESS are co-located
+ 	 */
+-	if (count) {
+-		need_scan_psc = false;
+-
++	if (count && request->n_ssids == 1 && request->ssids[0].ssid_len) {
+ 		list_for_each_entry(ap, &coloc_ap_list, list) {
+-			if (!ap->colocated_ess) {
+-				need_scan_psc = true;
++			if (ap->colocated_ess &&
++			    cfg80211_find_ssid_match(ap, request)) {
++				need_scan_psc = false;
+ 				break;
+ 			}
+ 		}
+-	} else {
+-		need_scan_psc = true;
+ 	}
+ 
+ 	/*
+-- 
+2.25.1
+

@@ -1,0 +1,41 @@
+From ec80e7e9a5b67a4d5908f6097b64117dd001b6dc Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Fri, 20 Nov 2020 12:36:45 -0600
+Subject: [PATCH 094/166] mac80211: Fix fall-through warnings for Clang
+
+In preparation to enable -Wimplicit-fallthrough for Clang, fix multiple
+warnings by explicitly adding multiple break statements instead of
+letting the code fall through to the next case.
+
+Link: https://github.com/KSPP/linux/issues/115
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Link: https://lore.kernel.org/r/1a9c4e8248e76e1361edbe2471a68773d87f0b67.1605896060.git.gustavoars@kernel.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit aaaee2d68a9578394894fec0d61bfac2d49fc9e7)
+---
+ net/mac80211/cfg.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+index 454432ced0c9..c0d0b15c10fd 100644
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -405,6 +405,7 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
+ 	case WLAN_CIPHER_SUITE_WEP104:
+ 		if (WARN_ON_ONCE(fips_enabled))
+ 			return -EINVAL;
++		break;
+ 	case WLAN_CIPHER_SUITE_CCMP:
+ 	case WLAN_CIPHER_SUITE_CCMP_256:
+ 	case WLAN_CIPHER_SUITE_AES_CMAC:
+@@ -3297,6 +3298,7 @@ static int ieee80211_set_csa_beacon(struct ieee80211_sub_if_data *sdata,
+ 			if (cfg80211_get_chandef_type(&params->chandef) !=
+ 			    cfg80211_get_chandef_type(&sdata->u.ibss.chandef))
+ 				return -EINVAL;
++			break;
+ 		case NL80211_CHAN_WIDTH_5:
+ 		case NL80211_CHAN_WIDTH_10:
+ 		case NL80211_CHAN_WIDTH_20_NOHT:
+-- 
+2.25.1
+

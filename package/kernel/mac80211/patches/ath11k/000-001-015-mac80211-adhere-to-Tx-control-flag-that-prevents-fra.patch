@@ -1,0 +1,56 @@
+From 7364d1dd9c084d20ee28bccbb5206e4b3badaebf Mon Sep 17 00:00:00 2001
+From: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Date: Wed, 4 Nov 2020 10:18:20 +0400
+Subject: [PATCH 015/166] mac80211: adhere to Tx control flag that prevents
+ frame reordering
+
+When the Tx control flag is set to prevent frame reordering, send
+all frames that have this flag set on the same queue. This assures
+that frames that have this flag set are not reordered relative to
+other frames that have this flag set.
+
+Signed-off-by: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Link: https://lore.kernel.org/r/20201104061823.197407-3-Mathy.Vanhoef@kuleuven.be
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 66d06c84730c8b148d93909ffbddf074fd771a48)
+---
+ net/mac80211/wme.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/net/mac80211/wme.c b/net/mac80211/wme.c
+index 2fb99325135a..3d7dea387e3d 100644
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -118,9 +118,11 @@ u16 ieee80211_select_queue_80211(struct ieee80211_sub_if_data *sdata,
+ 				 struct ieee80211_hdr *hdr)
+ {
+ 	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	u8 *p;
+ 
+-	if (local->hw.queues < IEEE80211_NUM_ACS)
++	if ((info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER) ||
++	    local->hw.queues < IEEE80211_NUM_ACS)
+ 		return 0;
+ 
+ 	if (!ieee80211_is_data(hdr->frame_control)) {
+@@ -141,6 +143,7 @@ u16 ieee80211_select_queue_80211(struct ieee80211_sub_if_data *sdata,
+ u16 __ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+ 			     struct sta_info *sta, struct sk_buff *skb)
+ {
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct mac80211_qos_map *qos_map;
+ 	bool qos;
+ 
+@@ -153,7 +156,7 @@ u16 __ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+ 	else
+ 		qos = false;
+ 
+-	if (!qos) {
++	if (!qos || (info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER)) {
+ 		skb->priority = 0; /* required for correct WPA/11i MIC */
+ 		return IEEE80211_AC_BE;
+ 	}
+-- 
+2.25.1
+

@@ -1,0 +1,47 @@
+From 9fe7119cedeae987ccc9bcf1f796facb3cf3d338 Mon Sep 17 00:00:00 2001
+From: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
+Date: Sun, 6 Dec 2020 14:54:49 +0200
+Subject: [PATCH 117/166] mac80211: don't filter out beacons once we start CSA
+
+I hit a bug in which we started a CSA with an action frame,
+but the AP changed its mind and didn't change the beacon.
+The CSA wasn't cancelled and we lost the connection.
+
+The beacons were ignored because they never changed: they
+never contained any CSA IE. Because they never changed, the
+CRC of the beacon didn't change either which made us ignore
+the beacons instead of processing them.
+
+Now what happens is:
+1) beacon has CRC X and it is valid. No CSA IE in the beacon
+2) as long as beacon's CRC X, don't process their IEs
+3) rx action frame with CSA
+4) invalidate the beacon's CRC
+5) rx beacon, CRC is still X, but now it is invalid
+6) process the beacon, detect there is no CSA IE
+7) abort CSA
+
+Signed-off-by: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201206145305.83470b8407e6.I739b907598001362744692744be15335436b8351@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 189a164d0fc6c59a22c4486d641d0a0a0d33387a)
+---
+ net/mac80211/mlme.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index 35e710ca75e4..185d3e30849b 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1502,6 +1502,7 @@ ieee80211_sta_process_chanswitch(struct ieee80211_sub_if_data *sdata,
+ 	sdata->csa_chandef = csa_ie.chandef;
+ 	sdata->csa_block_tx = csa_ie.mode;
+ 	ifmgd->csa_ignored_same_chan = false;
++	ifmgd->beacon_crc_valid = false;
+ 
+ 	if (sdata->csa_block_tx)
+ 		ieee80211_stop_vif_queues(local, sdata,
+-- 
+2.25.1
+

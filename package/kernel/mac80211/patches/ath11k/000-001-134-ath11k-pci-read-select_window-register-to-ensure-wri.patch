@@ -1,0 +1,39 @@
+From 7e0145fb7d43d8f54086829c2b7d47561a28356f Mon Sep 17 00:00:00 2001
+From: Carl Huang <cjhuang@codeaurora.org>
+Date: Fri, 11 Dec 2020 19:35:43 +0200
+Subject: [PATCH 134/166] ath11k: pci: read select_window register to ensure
+ write is finished
+
+Just when resume from WoW, the write to select_window doesn't take
+effect immediately, so read the register again to ensure the write
+operation is finished.
+
+Another change is to reset select_window to ZERO because this
+register isn't restored after WoW, so the content of this register
+becomes ZERO too.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Carl Huang <cjhuang@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607708150-21066-4-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit f6fa37a4928ffc4722e4570462bf461634e0d60c)
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 770cefd53290..ee1c2edefa20 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -126,6 +126,7 @@ static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offse
+ 	if (window != ab_pci->register_window) {
+ 		iowrite32(WINDOW_ENABLE_BIT | window,
+ 			  ab->mem + WINDOW_REG_ADDRESS);
++		ioread32(ab->mem + WINDOW_REG_ADDRESS);
+ 		ab_pci->register_window = window;
+ 	}
+ }
+-- 
+2.25.1
+

@@ -1,0 +1,48 @@
+From 91ec284db191e99e2dce3667b0425b80045d4d13 Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Tue, 5 Jan 2021 11:08:39 +0800
+Subject: [PATCH 20/93] mac80211: remove NSS number of 160MHz if not support
+ 160MHz for HE
+
+When it does not support 160MHz in HE phy capabilities information,
+it should not treat the NSS number of 160MHz as a valid number,
+otherwise the final NSS will be set to 0.
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Link: https://lore.kernel.org/r/1609816120-9411-2-git-send-email-wgong@codeaurora.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 2d5e09d05827f9aace60b9711d9680e5da51ca5d)
+---
+ net/mac80211/vht.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/net/mac80211/vht.c b/net/mac80211/vht.c
+index c3ca97373774..e856f9092137 100644
+--- a/net/mac80211/vht.c
++++ b/net/mac80211/vht.c
+@@ -484,6 +484,7 @@ enum ieee80211_sta_rx_bandwidth ieee80211_sta_cur_vht_bw(struct sta_info *sta)
+ void ieee80211_sta_set_rx_nss(struct sta_info *sta)
+ {
+ 	u8 ht_rx_nss = 0, vht_rx_nss = 0, he_rx_nss = 0, rx_nss;
++	bool support_160;
+ 
+ 	/* if we received a notification already don't overwrite it */
+ 	if (sta->sta.rx_nss)
+@@ -514,7 +515,13 @@ void ieee80211_sta_set_rx_nss(struct sta_info *sta)
+ 			}
+ 		}
+ 
+-		he_rx_nss = min(rx_mcs_80, rx_mcs_160);
++		support_160 = he_cap->he_cap_elem.phy_cap_info[0] &
++			      IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G;
++
++		if (support_160)
++			he_rx_nss = min(rx_mcs_80, rx_mcs_160);
++		else
++			he_rx_nss = rx_mcs_80;
+ 	}
+ 
+ 	if (sta->sta.ht_cap.ht_supported) {
+-- 
+2.25.1
+

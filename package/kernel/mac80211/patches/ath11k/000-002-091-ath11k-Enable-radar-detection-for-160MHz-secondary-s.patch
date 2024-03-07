@@ -1,0 +1,43 @@
+From 05cda283ac6116b73cb80d61e36768d6dd890efb Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Wed, 17 Feb 2021 11:45:45 +0200
+Subject: [PATCH 91/93] ath11k: Enable radar detection for 160MHz secondary
+ segment
+
+WMI_CHAN_INFO_DFS_FREQ2 needs to be set in wmi vdev start command chan
+info parameter, to enable radar detection for secondary segment in 160MHz.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-01717-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1613480547-28810-1-git-send-email-lavaks@codeaurora.org
+(cherry picked from commit 788f805e8c0a10679fdfa7c6d0e21465e3b62de5)
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index d685bea6da24..335d49af7dd5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5094,13 +5094,15 @@ ath11k_mac_vdev_start_restart(struct ath11k_vif *arvif,
+ 		arg.channel.chan_radar =
+ 			!!(chandef->chan->flags & IEEE80211_CHAN_RADAR);
+ 
++		arg.channel.freq2_radar =
++			!!(chandef->chan->flags & IEEE80211_CHAN_RADAR);
++
+ 		arg.channel.passive = arg.channel.chan_radar;
+ 
+ 		spin_lock_bh(&ab->base_lock);
+ 		arg.regdomain = ar->ab->dfs_region;
+ 		spin_unlock_bh(&ab->base_lock);
+ 
+-		/* TODO: Notify if secondary 80Mhz also needs radar detection */
+ 		if (he_support) {
+ 			ret = ath11k_set_he_mu_sounding_mode(ar, arvif);
+ 			if (ret) {
+-- 
+2.25.1
+

@@ -1,0 +1,60 @@
+From 0ff663c7dd616f9c0dbcdf1a2def944e6212039a Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Mon, 7 Dec 2020 16:16:08 +0200
+Subject: [PATCH 077/166] ath11k: Ignore resetting peer auth flag in peer assoc
+ cmd
+
+Incase of hardware encryption, WMI_PEER_AUTH flag will be set by firmware
+during install key. Since install key wont be done for software encryption
+mode, firmware will not set this flag. Due to this, seeing traffic failure
+in software encryption. Hence, avoid resetting peer auth flag if hardware
+encryption disabled.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-01421-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1606369414-25211-1-git-send-email-seevalam@codeaurora.org
+(cherry picked from commit 1daf58b23a1ed71c2064ea4d3aa517ac8669cf8d)
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index f6f726979710..59e179d86f38 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1688,7 +1688,8 @@ int ath11k_wmi_vdev_install_key(struct ath11k *ar,
+ 
+ static inline void
+ ath11k_wmi_copy_peer_flags(struct wmi_peer_assoc_complete_cmd *cmd,
+-			   struct peer_assoc_params *param)
++			   struct peer_assoc_params *param,
++			   bool hw_crypto_disabled)
+ {
+ 	cmd->peer_flags = 0;
+ 
+@@ -1742,7 +1743,8 @@ ath11k_wmi_copy_peer_flags(struct wmi_peer_assoc_complete_cmd *cmd,
+ 		cmd->peer_flags |= WMI_PEER_AUTH;
+ 	if (param->need_ptk_4_way) {
+ 		cmd->peer_flags |= WMI_PEER_NEED_PTK_4_WAY;
+-		cmd->peer_flags &= ~WMI_PEER_AUTH;
++		if (!hw_crypto_disabled)
++			cmd->peer_flags &= ~WMI_PEER_AUTH;
+ 	}
+ 	if (param->need_gtk_2_way)
+ 		cmd->peer_flags |= WMI_PEER_NEED_GTK_2_WAY;
+@@ -1809,7 +1811,9 @@ int ath11k_wmi_send_peer_assoc_cmd(struct ath11k *ar,
+ 	cmd->peer_new_assoc = param->peer_new_assoc;
+ 	cmd->peer_associd = param->peer_associd;
+ 
+-	ath11k_wmi_copy_peer_flags(cmd, param);
++	ath11k_wmi_copy_peer_flags(cmd, param,
++				   test_bit(ATH11K_FLAG_HW_CRYPTO_DISABLED,
++					    &ar->ab->dev_flags));
+ 
+ 	ether_addr_copy(cmd->peer_macaddr.addr, param->peer_mac);
+ 
+-- 
+2.25.1
+

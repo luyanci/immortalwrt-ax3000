@@ -1,0 +1,37 @@
+From bcc46faacf2161b5dbd87d043b36e47cd7c5ea2e Mon Sep 17 00:00:00 2001
+From: Shuah Khan <skhan@linuxfoundation.org>
+Date: Tue, 9 Feb 2021 17:42:24 -0700
+Subject: [PATCH 60/93] ath10k: change ath10k_offchan_tx_work() peer present
+ msg to a warn
+
+Based on the comment block in this function and the FIXME for this, peer
+being present for the offchannel tx is unlikely. Peer is deleted once tx
+is complete. Change peer present msg to a warn to detect this condition.
+
+Signed-off-by: Shuah Khan <skhan@linuxfoundation.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/3b1f71272d56ee1d7f567fbce13bdb56cc06d342.1612915444.git.skhan@linuxfoundation.org
+(cherry picked from commit 83bae26532ca7318c1308fd80434e1e420bcf407)
+---
+ drivers/net/wireless/ath/ath10k/mac.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/mac.c b/drivers/net/wireless/ath/ath10k/mac.c
+index c202b167d8c6..bb6c5ee43ac0 100644
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -4115,9 +4115,8 @@ void ath10k_offchan_tx_work(struct work_struct *work)
+ 		spin_unlock_bh(&ar->data_lock);
+ 
+ 		if (peer)
+-			/* FIXME: should this use ath10k_warn()? */
+-			ath10k_dbg(ar, ATH10K_DBG_MAC, "peer %pM on vdev %d already present\n",
+-				   peer_addr, vdev_id);
++			ath10k_warn(ar, "peer %pM on vdev %d already present\n",
++				    peer_addr, vdev_id);
+ 
+ 		if (!peer) {
+ 			ret = ath10k_peer_create(ar, NULL, NULL, vdev_id,
+-- 
+2.25.1
+

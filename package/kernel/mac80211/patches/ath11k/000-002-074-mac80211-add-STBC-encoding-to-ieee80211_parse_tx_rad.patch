@@ -1,0 +1,42 @@
+From 30065c52a5949dddaef472d63abcec8d60c4aed5 Mon Sep 17 00:00:00 2001
+From: Philipp Borgers <borgers@mi.fu-berlin.de>
+Date: Mon, 25 Jan 2021 16:07:44 +0100
+Subject: [PATCH 74/93] mac80211: add STBC encoding to
+ ieee80211_parse_tx_radiotap
+
+This patch adds support for STBC encoding to the radiotap tx parse
+function. Prior to this change adding the STBC flag to the radiotap
+header did not encode frames with STBC.
+
+Signed-off-by: Philipp Borgers <borgers@mi.fu-berlin.de>
+Link: https://lore.kernel.org/r/20210125150744.83065-1-borgers@mi.fu-berlin.de
+[use u8_get_bits/u32_encode_bits instead of manually shifting]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 549fdd34b5f2dfa63e10855f20796c13a036707b)
+---
+ net/mac80211/tx.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 6ec415f043e1..5d06de61047a 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2122,6 +2122,15 @@ bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+ 			if (mcs_known & IEEE80211_RADIOTAP_MCS_HAVE_FEC &&
+ 			    mcs_flags & IEEE80211_RADIOTAP_MCS_FEC_LDPC)
+ 				info->flags |= IEEE80211_TX_CTL_LDPC;
++
++			if (mcs_known & IEEE80211_RADIOTAP_MCS_HAVE_STBC) {
++				u8 stbc = u8_get_bits(mcs_flags,
++						      IEEE80211_RADIOTAP_MCS_STBC_MASK);
++
++				info->flags |=
++					u32_encode_bits(stbc,
++							IEEE80211_TX_CTL_STBC);
++			}
+ 			break;
+ 
+ 		case IEEE80211_RADIOTAP_VHT:
+-- 
+2.25.1
+

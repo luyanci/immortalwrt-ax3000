@@ -1,0 +1,42 @@
+From b76ad7f17ae78d7bc1830af0729cfebf370ea45d Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:23:30 +0000
+Subject: [PATCH 045/166] wil6210: wmi: Correct misnamed function parameter
+ 'ptr_'
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/wil6210/wmi.c:279: warning: Function parameter or member 'ptr_' not described in 'wmi_buffer_block'
+ drivers/net/wireless/ath/wil6210/wmi.c:279: warning: Excess function parameter 'ptr' description in 'wmi_buffer_block'
+
+Cc: Maya Erez <merez@codeaurora.org>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: wil6210@qti.qualcomm.com
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-2-lee.jones@linaro.org
+(cherry picked from commit c9621dd21e3b86c5235545ed8eb27e1647cc7da4)
+---
+ drivers/net/wireless/ath/wil6210/wmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/wil6210/wmi.c b/drivers/net/wireless/ath/wil6210/wmi.c
+index 421aebbb49e5..8699f8279a8b 100644
+--- a/drivers/net/wireless/ath/wil6210/wmi.c
++++ b/drivers/net/wireless/ath/wil6210/wmi.c
+@@ -262,7 +262,7 @@ struct fw_map *wil_find_fw_mapping(const char *section)
+ /**
+  * Check address validity for WMI buffer; remap if needed
+  * @wil: driver data
+- * @ptr: internal (linker) fw/ucode address
++ * @ptr_: internal (linker) fw/ucode address
+  * @size: if non zero, validate the block does not
+  *  exceed the device memory (bar)
+  *
+-- 
+2.25.1
+

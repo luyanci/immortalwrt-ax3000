@@ -1,0 +1,68 @@
+From d602dc2b29076cce5533d6dcf6be4f70cd67ed68 Mon Sep 17 00:00:00 2001
+From: Loic Poulain <loic.poulain@linaro.org>
+Date: Mon, 28 Sep 2020 09:39:50 +0530
+Subject: [PATCH 056/166] bus: mhi: Remove auto-start option
+
+There is really no point having an auto-start for channels.
+This is confusing for the device drivers, some have to enable the
+channels, others don't have... and waste resources (e.g. pre allocated
+buffers) that may never be used.
+
+This is really up to the MHI device(channel) driver to manage the state
+of its channels.
+
+While at it, let's also remove the auto-start option from ath11k mhi
+controller.
+
+Signed-off-by: Loic Poulain <loic.poulain@linaro.org>
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+[mani: clubbed ath11k change]
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+(cherry picked from commit ed5298c7d500abaf34ed7783969e953a1f028e5b)
+---
+ drivers/bus/mhi/core/init.c           | 9 ---------
+ drivers/bus/mhi/core/internal.h       | 1 -
+ drivers/net/wireless/ath/ath11k/mhi.c | 4 ----
+ include/linux/mhi.h                   | 2 --
+ 4 files changed, 16 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index aded9a719d51..47a1ce1bee4f 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -24,7 +24,6 @@ static struct mhi_channel_config ath11k_mhi_channels[] = {
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
+-		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 1,
+@@ -39,7 +38,6 @@ static struct mhi_channel_config ath11k_mhi_channels[] = {
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
+-		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 20,
+@@ -54,7 +52,6 @@ static struct mhi_channel_config ath11k_mhi_channels[] = {
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
+-		.auto_start = true,
+ 	},
+ 	{
+ 		.num = 21,
+@@ -69,7 +66,6 @@ static struct mhi_channel_config ath11k_mhi_channels[] = {
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = true,
+-		.auto_start = true,
+ 	},
+ };
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,51 @@
+From 774b13b1af34631e0b73e2d314e206bf02873580 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Thu, 28 Jan 2021 18:35:27 +0100
+Subject: [PATCH 44/93] wext: call cfg80211_set_encryption() with wiphy lock
+ held
+
+Similar to the previous commit, we need to hold the wiphy lock
+here. There's a second instance that is correct already, fix
+this one as well.
+
+Fixes: a05829a7222e ("cfg80211: avoid holding the RTNL when calling the driver")
+Link: https://lore.kernel.org/r/20210128183454.ea2f086465ed.I891d3bb44f068e6d97c160005010f052f28ab6e5@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit c88f952026ab0b860451bdc88f43d73124a7302a)
+---
+ net/wireless/wext-compat.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/net/wireless/wext-compat.c b/net/wireless/wext-compat.c
+index 0c6ea6212496..a8320dc59af7 100644
+--- a/net/wireless/wext-compat.c
++++ b/net/wireless/wext-compat.c
+@@ -655,6 +655,7 @@ static int cfg80211_wext_siwencodeext(struct net_device *dev,
+ 	bool remove = false;
+ 	struct key_params params;
+ 	u32 cipher;
++	int ret;
+ 
+ 	if (wdev->iftype != NL80211_IFTYPE_STATION &&
+ 	    wdev->iftype != NL80211_IFTYPE_ADHOC)
+@@ -726,12 +727,16 @@ static int cfg80211_wext_siwencodeext(struct net_device *dev,
+ 		params.seq_len = 6;
+ 	}
+ 
+-	return cfg80211_set_encryption(
++	wiphy_lock(wdev->wiphy);
++	ret = cfg80211_set_encryption(
+ 			rdev, dev,
+ 			!(ext->ext_flags & IW_ENCODE_EXT_GROUP_KEY),
+ 			addr, remove,
+ 			ext->ext_flags & IW_ENCODE_EXT_SET_TX_KEY,
+ 			idx, &params);
++	wiphy_unlock(wdev->wiphy);
++
++	return ret;
+ }
+ 
+ static int cfg80211_wext_giwencode(struct net_device *dev,
+-- 
+2.25.1
+

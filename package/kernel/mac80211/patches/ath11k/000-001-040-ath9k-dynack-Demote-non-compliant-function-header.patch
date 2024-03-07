@@ -1,0 +1,43 @@
+From c1dc8786b6164aa88fa069b83b8dcb6569df0bde Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:24:08 +0000
+Subject: [PATCH 040/166] ath9k: dynack: Demote non-compliant function header
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/ath9k/dynack.c:52: warning: Function parameter or member 'old' not described in 'ath_dynack_ewma'
+ drivers/net/wireless/ath/ath9k/dynack.c:52: warning: Function parameter or member 'new' not described in 'ath_dynack_ewma'
+
+Cc: QCA ath9k Development <ath9k-devel@qca.qualcomm.com>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-40-lee.jones@linaro.org
+(cherry picked from commit cd64cae3efd42340b274ccaf42588cca3be6a246)
+---
+ drivers/net/wireless/ath/ath9k/dynack.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/dynack.c b/drivers/net/wireless/ath/ath9k/dynack.c
+index fbeb4a739d32..3219715174a2 100644
+--- a/drivers/net/wireless/ath/ath9k/dynack.c
++++ b/drivers/net/wireless/ath/ath9k/dynack.c
+@@ -44,9 +44,8 @@ static u32 ath_dynack_get_max_to(struct ath_hw *ah)
+ 	return 600;
+ }
+ 
+-/**
++/*
+  * ath_dynack_ewma - EWMA (Exponentially Weighted Moving Average) calculation
+- *
+  */
+ static inline int ath_dynack_ewma(int old, int new)
+ {
+-- 
+2.25.1
+

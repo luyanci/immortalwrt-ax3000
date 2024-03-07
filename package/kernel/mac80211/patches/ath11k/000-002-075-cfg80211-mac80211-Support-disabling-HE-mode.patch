@@ -1,0 +1,87 @@
+From 8c08ef73d7d9bb15d250724c776ff6d4a29d128a Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Thu, 4 Feb 2021 06:46:10 -0800
+Subject: [PATCH 75/93] cfg80211/mac80211: Support disabling HE mode
+
+Allow user to disable HE mode, similar to how VHT and HT
+can be disabled.  Useful for testing.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+Link: https://lore.kernel.org/r/20210204144610.25971-1-greearb@candelatech.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit b6db0f899a16a23f5a9ea6c8b0fafc7bbd38e03d)
+---
+ include/net/cfg80211.h       | 2 ++
+ include/uapi/linux/nl80211.h | 2 ++
+ net/mac80211/mlme.c          | 3 +++
+ net/wireless/nl80211.c       | 7 +++++++
+ 4 files changed, 14 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 4cdd75449d73..911fae42b0c0 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -2583,12 +2583,14 @@ struct cfg80211_auth_request {
+  *	authentication capability. Drivers can offload authentication to
+  *	userspace if this flag is set. Only applicable for cfg80211_connect()
+  *	request (connect callback).
++ * @ASSOC_REQ_DISABLE_HE:  Disable HE
+  */
+ enum cfg80211_assoc_req_flags {
+ 	ASSOC_REQ_DISABLE_HT			= BIT(0),
+ 	ASSOC_REQ_DISABLE_VHT			= BIT(1),
+ 	ASSOC_REQ_USE_RRM			= BIT(2),
+ 	CONNECT_REQ_EXTERNAL_AUTH_SUPPORT	= BIT(3),
++	ASSOC_REQ_DISABLE_HE			= BIT(4),
+ };
+ 
+ /**
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index 0e4d950cf907..2e33a1263518 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -5754,6 +5754,9 @@ int ieee80211_mgd_assoc(struct ieee80211_sub_if_data *sdata,
+ 	if (req->flags & ASSOC_REQ_DISABLE_VHT)
+ 		ifmgd->flags |= IEEE80211_STA_DISABLE_VHT;
+ 
++	if (req->flags & ASSOC_REQ_DISABLE_HE)
++		ifmgd->flags |= IEEE80211_STA_DISABLE_HE;
++
+ 	err = ieee80211_prep_connection(sdata, req->bss, true, override);
+ 	if (err)
+ 		goto err_clear;
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 3b45a9593e71..521d36bb0803 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -752,6 +752,7 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
+ 				 NL80211_SAE_PWE_BOTH),
+ 	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
+ 	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
++	[NL80211_ATTR_DISABLE_HE] = { .type = NLA_FLAG },
+ 	[NL80211_ATTR_OBSS_COLOR_BITMAP] = { .type = NLA_U64 },
+ 	[NL80211_ATTR_COLOR_CHANGE_COUNT] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_COLOR_CHANGE_COLOR] = { .type = NLA_U8 },
+@@ -10019,6 +10020,9 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
+ 	if (nla_get_flag(info->attrs[NL80211_ATTR_DISABLE_VHT]))
+ 		req.flags |= ASSOC_REQ_DISABLE_VHT;
+ 
++	if (nla_get_flag(info->attrs[NL80211_ATTR_DISABLE_HE]))
++		req.flags |= ASSOC_REQ_DISABLE_HE;
++
+ 	if (info->attrs[NL80211_ATTR_VHT_CAPABILITY_MASK])
+ 		memcpy(&req.vht_capa_mask,
+ 		       nla_data(info->attrs[NL80211_ATTR_VHT_CAPABILITY_MASK]),
+@@ -10802,6 +10806,9 @@ static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
+ 	if (nla_get_flag(info->attrs[NL80211_ATTR_DISABLE_VHT]))
+ 		connect.flags |= ASSOC_REQ_DISABLE_VHT;
+ 
++	if (nla_get_flag(info->attrs[NL80211_ATTR_DISABLE_HE]))
++		connect.flags |= ASSOC_REQ_DISABLE_HE;
++
+ 	if (info->attrs[NL80211_ATTR_VHT_CAPABILITY_MASK])
+ 		memcpy(&connect.vht_capa_mask,
+ 		       nla_data(info->attrs[NL80211_ATTR_VHT_CAPABILITY_MASK]),
+-- 
+2.25.1
+

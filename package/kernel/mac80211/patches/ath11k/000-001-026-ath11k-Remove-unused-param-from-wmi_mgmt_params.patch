@@ -1,0 +1,33 @@
+From a7674ff1b7e54b2532b644183ea917492addf017 Mon Sep 17 00:00:00 2001
+From: Govind Singh <govinds@codeaurora.org>
+Date: Thu, 22 Oct 2020 09:29:35 +0530
+Subject: [PATCH 026/166] ath11k: Remove unused param from wmi_mgmt_params
+
+qdf_ctx is not used in wmi_mgmt_params, remove this
+un-used variable.
+
+Compile tested only.
+
+Signed-off-by: Govind Singh <govinds@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1603339175-12706-1-git-send-email-govinds@codeaurora.org
+(cherry picked from commit ff34107c22243a8f43d8aa0f100e177a4d56e95a)
+---
+ drivers/net/wireless/ath/ath11k/wmi.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.h b/drivers/net/wireless/ath/ath11k/wmi.h
+index b722a87144b6..e4cc15904795 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -3354,7 +3354,6 @@ struct wmi_mgmt_params {
+ 	void *pdata;
+ 	u16 desc_id;
+ 	u8 *macaddr;
+-	void *qdf_ctx;
+ };
+ 
+ enum wmi_sta_ps_mode {
+-- 
+2.25.1
+

@@ -1,0 +1,85 @@
+From 97279d4f9d08f9999cc7b4e286d3e12705600675 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Tue, 20 Oct 2020 11:31:08 -0700
+Subject: [PATCH 013/166] mac80211: save HE oper info in BSS config for mesh
+
+Currently he_support is set only for AP mode. Storing this
+information for mesh BSS as well helps driver to determine
+HE support. Also save HE operation element params in BSS
+conf so that drivers can access this for any configurations
+instead of having to parse the beacon to fetch that info.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Link: https://lore.kernel.org/r/20201020183111.25458-2-pradeepc@codeaurora.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 70debba3ab7d1009e97310268339cee1d5c7d949)
+---
+ include/net/mac80211.h |  3 ++-
+ net/mac80211/mesh.c    | 30 ++++++++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index dcdba96814a2..826227e1193a 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -621,7 +621,8 @@ struct ieee80211_fils_discovery {
+  *	nontransmitted BSSIDs
+  * @profile_periodicity: the least number of beacon frames need to be received
+  *	in order to discover all the nontransmitted BSSIDs in the set.
+- * @he_oper: HE operation information of the AP we are connected to
++ * @he_oper: HE operation information of the BSS (AP/Mesh) or of the AP we are
++ *	connected to (STA)
+  * @he_obss_pd: OBSS Packet Detection parameters.
+  * @he_bss_color: BSS coloring settings, if BSS supports HE
+  * @fils_discovery: FILS discovery configuration
+diff --git a/net/mac80211/mesh.c b/net/mac80211/mesh.c
+index ce5825d6f1d1..97095b7c9c64 100644
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -667,6 +667,35 @@ void ieee80211_mesh_root_setup(struct ieee80211_if_mesh *ifmsh)
+ 	}
+ }
+ 
++static void
++ieee80211_mesh_update_bss_params(struct ieee80211_sub_if_data *sdata,
++				 u8 *ie, u8 ie_len)
++{
++	struct ieee80211_supported_band *sband;
++	const u8 *cap;
++	const struct ieee80211_he_operation *he_oper = NULL;
++
++	sband = ieee80211_get_sband(sdata);
++	if (!sband)
++		return;
++
++	if (!ieee80211_get_he_iftype_cap(sband, NL80211_IFTYPE_MESH_POINT) ||
++	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_20_NOHT ||
++	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_5 ||
++	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_10)
++		return;
++
++	sdata->vif.bss_conf.he_support = true;
++
++	cap = cfg80211_find_ext_ie(WLAN_EID_EXT_HE_OPERATION, ie, ie_len);
++	if (cap && cap[1] >= ieee80211_he_oper_size(&cap[3]))
++		he_oper = (void *)(cap + 3);
++
++	if (he_oper)
++		sdata->vif.bss_conf.he_oper.params =
++			__le32_to_cpu(he_oper->he_oper_params);
++}
++
+ /**
+  * ieee80211_fill_mesh_addresses - fill addresses of a locally originated mesh frame
+  * @hdr:	802.11 frame header
+@@ -943,6 +972,7 @@ ieee80211_mesh_build_beacon(struct ieee80211_if_mesh *ifmsh)
+ 
+ 	bcn->tail_len = skb->len;
+ 	memcpy(bcn->tail, skb->data, bcn->tail_len);
++	ieee80211_mesh_update_bss_params(sdata, bcn->tail, bcn->tail_len);
+ 	bcn->meshconf = (struct ieee80211_meshconf_ie *)
+ 					(bcn->tail + ifmsh->meshconf_offset);
+ 
+-- 
+2.25.1
+

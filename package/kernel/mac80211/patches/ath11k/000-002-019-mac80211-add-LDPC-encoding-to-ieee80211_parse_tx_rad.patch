@@ -1,0 +1,36 @@
+From b42bcc6240fc19ad5dd1a49a7328b6f57631a7c3 Mon Sep 17 00:00:00 2001
+From: Philipp Borgers <borgers@mi.fu-berlin.de>
+Date: Sat, 19 Dec 2020 18:07:10 +0100
+Subject: [PATCH 19/93] mac80211: add LDPC encoding to
+ ieee80211_parse_tx_radiotap
+
+This patch adds support for LDPC encoding to the radiotap tx parse
+function. Piror to this change adding the LDPC flag to the radiotap
+header did not encode frames with LDPC.
+
+Signed-off-by: Philipp Borgers <borgers@mi.fu-berlin.de>
+Link: https://lore.kernel.org/r/20201219170710.11706-1-borgers@mi.fu-berlin.de
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit f1864e193dc04c3326522b4c0aa79b1d3653bbf0)
+---
+ net/mac80211/tx.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index d981647c2863..45536185d8d7 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2120,6 +2120,10 @@ bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+ 			if (mcs_known & IEEE80211_RADIOTAP_MCS_HAVE_BW &&
+ 			    mcs_bw == IEEE80211_RADIOTAP_MCS_BW_40)
+ 				rate_flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
++
++			if (mcs_known & IEEE80211_RADIOTAP_MCS_HAVE_FEC &&
++			    mcs_flags & IEEE80211_RADIOTAP_MCS_FEC_LDPC)
++				info->flags |= IEEE80211_TX_CTL_LDPC;
+ 			break;
+ 
+ 		case IEEE80211_RADIOTAP_VHT:
+-- 
+2.25.1
+

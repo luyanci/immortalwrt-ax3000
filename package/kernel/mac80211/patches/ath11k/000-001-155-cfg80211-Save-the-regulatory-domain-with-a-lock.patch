@@ -1,0 +1,66 @@
+From 07e8a4788a8131ce00106f7fc3380279ac33bfde Mon Sep 17 00:00:00 2001
+From: Ilan Peer <ilan.peer@intel.com>
+Date: Tue, 5 Jan 2021 16:56:57 +0200
+Subject: [PATCH 155/166] cfg80211: Save the regulatory domain with a lock
+
+Saving the regulatory domain while setting custom regulatory domain
+was done while accessing a RCU protected pointer but without any
+protection.
+
+Fix this by using RTNL while accessing the pointer.
+
+Signed-off-by: Ilan Peer <ilan.peer@intel.com>
+Reported-by: syzbot+27771d4abcd9b7a1f5d3@syzkaller.appspotmail.com
+Reported-by: syzbot+db4035751c56c0079282@syzkaller.appspotmail.com
+Reported-by: Hans de Goede <hdegoede@redhat.com>
+Fixes: beee24695157 ("cfg80211: Save the regulatory domain when setting custom regulatory")
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20210105165657.613e9a876829.Ia38d27dbebea28bf9c56d70691d243186ede70e7@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 51d62f2f2c501a93d9a6a46f43731f984e227764)
+---
+ net/wireless/reg.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index bb72447ad960..8114bba8556c 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -5,7 +5,7 @@
+  * Copyright 2008-2011	Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+  * Copyright 2013-2014  Intel Mobile Communications GmbH
+  * Copyright      2017  Intel Deutschland GmbH
+- * Copyright (C) 2018 - 2019 Intel Corporation
++ * Copyright (C) 2018 - 2021 Intel Corporation
+  *
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
+@@ -139,6 +139,11 @@ static const struct ieee80211_regdomain *get_cfg80211_regdom(void)
+ 	return rcu_dereference_rtnl(cfg80211_regdomain);
+ }
+ 
++/*
++ * Returns the regulatory domain associated with the wiphy.
++ *
++ * Requires either RTNL or RCU protection
++ */
+ const struct ieee80211_regdomain *get_wiphy_regdom(struct wiphy *wiphy)
+ {
+ 	return rcu_dereference_rtnl(wiphy->regd);
+@@ -2571,9 +2576,13 @@ void wiphy_apply_custom_regulatory(struct wiphy *wiphy,
+ 	if (IS_ERR(new_regd))
+ 		return;
+ 
++	rtnl_lock();
++
+ 	tmp = get_wiphy_regdom(wiphy);
+ 	rcu_assign_pointer(wiphy->regd, new_regd);
+ 	rcu_free_regdom(tmp);
++
++	rtnl_unlock();
+ }
+ EXPORT_SYMBOL(wiphy_apply_custom_regulatory);
+ 
+-- 
+2.25.1
+

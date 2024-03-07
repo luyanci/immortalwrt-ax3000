@@ -1,0 +1,80 @@
+From e9139c98b6f172ecf2d9bfa638e7af94f0dcabeb Mon Sep 17 00:00:00 2001
+From: Arend van Spriel <arend.vanspriel@broadcom.com>
+Date: Tue, 5 Jan 2021 11:58:39 +0100
+Subject: [PATCH 22/93] cfg80211: add VHT rate entries for MCS-10 and MCS-11
+
+Observed the warning in cfg80211_calculate_bitrate_vht() using an
+11ac chip reporting MCS-11. Since devices reporting non-standard
+MCS-9 is already supported add similar entries for MCS-10 and MCS-11.
+Actually, the value of MCS-9@20MHz is slightly off so corrected that.
+
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Link: https://lore.kernel.org/r/20210105105839.3795-1-arend.vanspriel@broadcom.com
+[fix array size]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit c27aa56a72b8ea6d3bef6fcb1be1a85cf78b0673)
+---
+ net/wireless/util.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+index b4acc805114b..c22ada0a36fa 100644
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -1224,7 +1224,7 @@ static u32 cfg80211_calculate_bitrate_edmg(struct rate_info *rate)
+ 
+ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ {
+-	static const u32 base[4][10] = {
++	static const u32 base[4][12] = {
+ 		{   6500000,
+ 		   13000000,
+ 		   19500000,
+@@ -1235,7 +1235,9 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ 		   65000000,
+ 		   78000000,
+ 		/* not in the spec, but some devices use this: */
+-		   86500000,
++		   86700000,
++		   97500000,
++		  108300000,
+ 		},
+ 		{  13500000,
+ 		   27000000,
+@@ -1247,6 +1249,8 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ 		  135000000,
+ 		  162000000,
+ 		  180000000,
++		  202500000,
++		  225000000,
+ 		},
+ 		{  29300000,
+ 		   58500000,
+@@ -1258,6 +1262,8 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ 		  292500000,
+ 		  351000000,
+ 		  390000000,
++		  438800000,
++		  487500000,
+ 		},
+ 		{  58500000,
+ 		  117000000,
+@@ -1269,12 +1275,14 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ 		  585000000,
+ 		  702000000,
+ 		  780000000,
++		  877500000,
++		  975000000,
+ 		},
+ 	};
+ 	u32 bitrate;
+ 	int idx;
+ 
+-	if (rate->mcs > 9)
++	if (rate->mcs > 11)
+ 		goto warn;
+ 
+ 	switch (rate->bw) {
+-- 
+2.25.1
+

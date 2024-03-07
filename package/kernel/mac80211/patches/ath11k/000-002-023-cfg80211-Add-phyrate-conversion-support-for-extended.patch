@@ -1,0 +1,82 @@
+From 778b73c687ef933bc6cc24f4f44a63320a2851a0 Mon Sep 17 00:00:00 2001
+From: Max Chen <mxchen@codeaurora.org>
+Date: Wed, 6 Jan 2021 15:50:49 -0800
+Subject: [PATCH 23/93] cfg80211: Add phyrate conversion support for extended
+ MCS in 60GHz band
+
+The current phyrate conversion does not include extended MCS and provides
+incorrect rates. Add a flag for extended MCS in DMG and add corresponding
+phyrate table for the correct conversions using base MCS in DMG specs.
+
+Signed-off-by: Max Chen <mxchen@codeaurora.org>
+Link: https://lore.kernel.org/r/1609977050-7089-2-git-send-email-mxchen@codeaurora.org
+[reduce data size, make a single WARN]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit d9c85e24726587277ce0dcf33b5695acfcc72234)
+---
+ include/net/cfg80211.h |  2 ++
+ net/wireless/util.c    | 21 +++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 0d6f7ec86061..798f8eb15e00 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1460,6 +1460,7 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
+  * @RATE_INFO_FLAGS_DMG: 60GHz MCS
+  * @RATE_INFO_FLAGS_HE_MCS: HE MCS information
+  * @RATE_INFO_FLAGS_EDMG: 60GHz MCS in EDMG mode
++ * @RATE_INFO_FLAGS_EXTENDED_SC_DMG: 60GHz extended SC MCS
+  */
+ enum rate_info_flags {
+ 	RATE_INFO_FLAGS_MCS			= BIT(0),
+@@ -1468,6 +1469,7 @@ enum rate_info_flags {
+ 	RATE_INFO_FLAGS_DMG			= BIT(3),
+ 	RATE_INFO_FLAGS_HE_MCS			= BIT(4),
+ 	RATE_INFO_FLAGS_EDMG			= BIT(5),
++	RATE_INFO_FLAGS_EXTENDED_SC_DMG		= BIT(6),
+ };
+ 
+ /**
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+index c22ada0a36fa..eab928002cd8 100644
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -1188,6 +1188,25 @@ static u32 cfg80211_calculate_bitrate_dmg(struct rate_info *rate)
+ 	return __mcs2bitrate[rate->mcs];
+ }
+ 
++static u32 cfg80211_calculate_bitrate_extended_sc_dmg(struct rate_info *rate)
++{
++	static const u32 __mcs2bitrate[] = {
++		[6 - 6] = 26950, /* MCS 9.1 : 2695.0 mbps */
++		[7 - 6] = 50050, /* MCS 12.1 */
++		[8 - 6] = 53900,
++		[9 - 6] = 57750,
++		[10 - 6] = 63900,
++		[11 - 6] = 75075,
++		[12 - 6] = 80850,
++	};
++
++	/* Extended SC MCS not defined for base MCS below 6 or above 12 */
++	if (WARN_ON_ONCE(rate->mcs < 6 || rate->mcs > 12))
++		return 0;
++
++	return __mcs2bitrate[rate->mcs - 6];
++}
++
+ static u32 cfg80211_calculate_bitrate_edmg(struct rate_info *rate)
+ {
+ 	static const u32 __mcs2bitrate[] = {
+@@ -1406,6 +1425,8 @@ u32 cfg80211_calculate_bitrate(struct rate_info *rate)
+ 		return cfg80211_calculate_bitrate_ht(rate);
+ 	if (rate->flags & RATE_INFO_FLAGS_DMG)
+ 		return cfg80211_calculate_bitrate_dmg(rate);
++	if (rate->flags & RATE_INFO_FLAGS_EXTENDED_SC_DMG)
++		return cfg80211_calculate_bitrate_extended_sc_dmg(rate);
+ 	if (rate->flags & RATE_INFO_FLAGS_EDMG)
+ 		return cfg80211_calculate_bitrate_edmg(rate);
+ 	if (rate->flags & RATE_INFO_FLAGS_VHT_MCS)
+-- 
+2.25.1
+

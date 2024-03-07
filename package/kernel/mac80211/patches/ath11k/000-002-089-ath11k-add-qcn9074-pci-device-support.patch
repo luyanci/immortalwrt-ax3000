@@ -1,0 +1,92 @@
+From 1f3e7a4ddca2442e6862cfa3195eec7db914f594 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 16 Feb 2021 09:16:25 +0200
+Subject: [PATCH 89/93] ath11k: add qcn9074 pci device support
+
+QCN9074 is PCI based 11ax radio.
+	- has 2G/5G/6G variants.
+	- has NSS 2x2 and 4x4 variants.
+
+QCN9074 uses 45MB of HOST DDR memory, target requests host memory in
+segments, each segment is of 2MB size and is physcial contiguous and
+use static window configuration.
+
+Currently there are still two issues with QCN9074, see below. So we don't add
+QCN9074 PCI id yet to make sure the driver is loaded. The id will be added only
+after the issues are fixed.
+
+Issue 1:
+ ath11k_pci 0000:06:00.0: qmi failed memory request, err = -110
+ ath11k_pci 0000:06:00.0: qmi failed to respond fw mem req:-110
+
+Issue 2:
+ ath11k_pci 0000:06:00.0: firmware crashed: MHI_CB_SYS_ERROR
+ ath11k_pci 0000:06:00.0: qmi failed set mode request, mode: 0, err = -110
+ ath11k_pci 0000:06:00.0: qmi failed to send wlan fw mode:-110
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612946530-28504-12-git-send-email-akolli@codeaurora.org
+(cherry picked from commit 4e80946197a83a6115e308334618449b77696d6a)
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 74e490356251..0f31eb566fb6 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -35,9 +35,11 @@
+ #define ACCESS_ALWAYS_OFF 0xFE0
+ 
+ #define QCA6390_DEVICE_ID		0x1101
++#define QCN9074_DEVICE_ID		0x1104
+ 
+ static const struct pci_device_id ath11k_pci_id_table[] = {
+ 	{ PCI_VDEVICE(QCOM, QCA6390_DEVICE_ID) },
++	/* TODO: add QCN9074_DEVICE_ID) once firmware issues are resolved */
+ 	{0}
+ };
+ 
+@@ -61,6 +63,15 @@ static const struct ath11k_msi_config ath11k_msi_config[] = {
+ 			{ .name = "DP", .num_vectors = 18, .base_vector = 14 },
+ 		},
+ 	},
++	{
++		.total_vectors = 16,
++		.total_users = 3,
++		.users = (struct ath11k_msi_user[]) {
++			{ .name = "MHI", .num_vectors = 3, .base_vector = 0 },
++			{ .name = "CE", .num_vectors = 5, .base_vector = 3 },
++			{ .name = "DP", .num_vectors = 8, .base_vector = 8 },
++		},
++	},
+ };
+ 
+ static const char *irq_name[ATH11K_IRQ_NUM_MAX] = {
+@@ -1217,6 +1228,12 @@ static int ath11k_pci_probe(struct pci_dev *pdev,
+ 			ret = -EOPNOTSUPP;
+ 			goto err_pci_free_region;
+ 		}
++		ab_pci->msi_config = &ath11k_msi_config[0];
++		break;
++	case QCN9074_DEVICE_ID:
++		ab_pci->msi_config = &ath11k_msi_config[1];
++		ab->bus_params.static_window_map = true;
++		ab->hw_rev = ATH11K_HW_QCN9074_HW10;
+ 		break;
+ 	default:
+ 		dev_err(&pdev->dev, "Unknown PCI device found: 0x%x\n",
+@@ -1225,7 +1242,6 @@ static int ath11k_pci_probe(struct pci_dev *pdev,
+ 		goto err_pci_free_region;
+ 	}
+ 
+-	ab_pci->msi_config = &ath11k_msi_config[0];
+ 	ret = ath11k_pci_enable_msi(ab_pci);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to enable msi: %d\n", ret);
+-- 
+2.25.1
+

@@ -1,0 +1,84 @@
+From f53ca4bd6477b186f07e7af8af16238420b29b71 Mon Sep 17 00:00:00 2001
+From: Rajkumar Manoharan <rmanohar@codeaurora.org>
+Date: Fri, 16 Oct 2020 13:15:26 -0700
+Subject: [PATCH 011/166] nl80211: fix beacon tx rate mask validation
+
+While adding HE MCS beacon tx rate support, it is observed that legacy
+beacon tx rate in VHT hwsim test suite is failed. Whenever the
+application doesn't explicitly set VHT/MCS rate attribute in fixed rate
+command, by default all HE MCS masks are enabled in cfg80211. In beacon
+fixed rate, more than one rate mask is not allowed. Fix that by not
+setting all rate mask by default in case of beacon tx rate.
+
+Signed-off-by: Rajkumar Manoharan <rmanohar@codeaurora.org>
+Link: https://lore.kernel.org/r/1602879327-29488-1-git-send-email-rmanohar@codeaurora.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 857b34c4fb104cecc95cd5c5fea5052628758a0f)
+---
+ net/wireless/nl80211.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 8af681b8cfe4..62596720d7de 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -4598,7 +4598,8 @@ static int nl80211_parse_tx_bitrate_mask(struct genl_info *info,
+ 					 struct nlattr *attrs[],
+ 					 enum nl80211_attrs attr,
+ 					 struct cfg80211_bitrate_mask *mask,
+-					 struct net_device *dev)
++					 struct net_device *dev,
++					 bool default_all_enabled)
+ {
+ 	struct nlattr *tb[NL80211_TXRATE_MAX + 1];
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+@@ -4613,6 +4614,9 @@ static int nl80211_parse_tx_bitrate_mask(struct genl_info *info,
+ 	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+ 		const struct ieee80211_sta_he_cap *he_cap;
+ 
++		if (!default_all_enabled)
++			break;
++
+ 		sband = rdev->wiphy.bands[i];
+ 
+ 		if (!sband)
+@@ -5247,7 +5251,7 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
+ 		err = nl80211_parse_tx_bitrate_mask(info, info->attrs,
+ 						    NL80211_ATTR_TX_RATES,
+ 						    &params.beacon_rate,
+-						    dev);
++						    dev, false);
+ 		if (err)
+ 			return err;
+ 
+@@ -11097,7 +11101,7 @@ static int nl80211_set_tx_bitrate_mask(struct sk_buff *skb,
+ 
+ 	err = nl80211_parse_tx_bitrate_mask(info, info->attrs,
+ 					    NL80211_ATTR_TX_RATES, &mask,
+-					    dev);
++					    dev, true);
+ 	if (err)
+ 		return err;
+ 
+@@ -11706,7 +11710,7 @@ static int nl80211_join_mesh(struct sk_buff *skb, struct genl_info *info)
+ 		err = nl80211_parse_tx_bitrate_mask(info, info->attrs,
+ 						    NL80211_ATTR_TX_RATES,
+ 						    &setup.beacon_rate,
+-						    dev);
++						    dev, false);
+ 		if (err)
+ 			return err;
+ 
+@@ -14486,7 +14490,8 @@ static int parse_tid_conf(struct cfg80211_registered_device *rdev,
+ 		if (tid_conf->txrate_type != NL80211_TX_RATE_AUTOMATIC) {
+ 			attr = NL80211_TID_CONFIG_ATTR_TX_RATE;
+ 			err = nl80211_parse_tx_bitrate_mask(info, attrs, attr,
+-						    &tid_conf->txrate_mask, dev);
++						    &tid_conf->txrate_mask, dev,
++						    true);
+ 			if (err)
+ 				return err;
+ 
+-- 
+2.25.1
+

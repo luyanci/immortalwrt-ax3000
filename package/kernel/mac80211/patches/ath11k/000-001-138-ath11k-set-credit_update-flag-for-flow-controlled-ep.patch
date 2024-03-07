@@ -1,0 +1,44 @@
+From 56b5650998c2bd5c49282d12b8fce9e631e006ae Mon Sep 17 00:00:00 2001
+From: Carl Huang <cjhuang@codeaurora.org>
+Date: Fri, 11 Dec 2020 19:35:47 +0200
+Subject: [PATCH 138/166] ath11k: set credit_update flag for flow controlled ep
+ only
+
+Firmware will check all the pipes before entering WoW mode during suspend. If
+ATH11K_HTC_FLAG_NEED_CREDIT_UPDATE is set, firmware treats this pipe needed to
+return credit even though it's actually not required. If any pipe needs to
+return credit, the suspend_complete message doesn't send to host but is
+dropped.  So host gets time out and WoW suspend failed.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Carl Huang <cjhuang@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607708150-21066-8-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 2151ffde188a58d7de8fc92ed5ccf38d73ffdb68)
+---
+ drivers/net/wireless/ath/ath11k/htc.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/htc.c b/drivers/net/wireless/ath/ath11k/htc.c
+index 059b48ded5cc..54b1d34724d7 100644
+--- a/drivers/net/wireless/ath/ath11k/htc.c
++++ b/drivers/net/wireless/ath/ath11k/htc.c
+@@ -60,9 +60,11 @@ static void ath11k_htc_prepare_tx_skb(struct ath11k_htc_ep *ep,
+ 	memset(hdr, 0, sizeof(*hdr));
+ 	hdr->htc_info = FIELD_PREP(HTC_HDR_ENDPOINTID, ep->eid) |
+ 			FIELD_PREP(HTC_HDR_PAYLOADLEN,
+-				   (skb->len - sizeof(*hdr))) |
+-			FIELD_PREP(HTC_HDR_FLAGS,
+-				   ATH11K_HTC_FLAG_NEED_CREDIT_UPDATE);
++				   (skb->len - sizeof(*hdr)));
++
++	if (ep->tx_credit_flow_enabled)
++		hdr->htc_info |= FIELD_PREP(HTC_HDR_FLAGS,
++					    ATH11K_HTC_FLAG_NEED_CREDIT_UPDATE);
+ 
+ 	spin_lock_bh(&ep->htc->tx_lock);
+ 	hdr->ctrl_info = FIELD_PREP(HTC_HDR_CONTROLBYTES1, ep->seq_no++);
+-- 
+2.25.1
+

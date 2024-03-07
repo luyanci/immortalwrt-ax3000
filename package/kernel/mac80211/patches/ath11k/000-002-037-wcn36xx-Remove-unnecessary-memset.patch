@@ -1,0 +1,31 @@
+From 07834335b86888d329ea553869aba77dae8e0c74 Mon Sep 17 00:00:00 2001
+From: Zheng Yongjun <zhengyongjun3@huawei.com>
+Date: Mon, 18 Jan 2021 18:26:00 +0200
+Subject: [PATCH 37/93] wcn36xx: Remove unnecessary memset
+
+memcpy operation is next to memset code, and the size to copy is equals to the size to
+memset, so the memset operation is unnecessary, remove it.
+
+Signed-off-by: Zheng Yongjun <zhengyongjun3@huawei.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201223012516.24286-1-zhengyongjun3@huawei.com
+(cherry picked from commit 337cd0d3ce0c2e005b650d8ab8f2b05a91ca132e)
+---
+ drivers/net/wireless/ath/wcn36xx/smd.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/wcn36xx/smd.c b/drivers/net/wireless/ath/wcn36xx/smd.c
+index 5445277dd8de..28d3ee3ad4b9 100644
+--- a/drivers/net/wireless/ath/wcn36xx/smd.c
++++ b/drivers/net/wireless/ath/wcn36xx/smd.c
+@@ -485,7 +485,6 @@ static void init_hal_msg(struct wcn36xx_hal_msg_header *hdr,
+ 
+ #define PREPARE_HAL_PTT_MSG_BUF(send_buf, p_msg_body) \
+ 	do {							\
+-		memset(send_buf, 0, p_msg_body->header.len); \
+ 		memcpy(send_buf, p_msg_body, p_msg_body->header.len); \
+ 	} while (0)
+ 
+-- 
+2.25.1
+

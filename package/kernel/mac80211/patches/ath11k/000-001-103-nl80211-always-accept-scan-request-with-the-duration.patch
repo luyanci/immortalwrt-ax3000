@@ -1,0 +1,40 @@
+From d9ca96a516bf8861a3fc9c0157eb9e1e211f66bb Mon Sep 17 00:00:00 2001
+From: Avraham Stern <avraham.stern@intel.com>
+Date: Sun, 29 Nov 2020 17:30:50 +0200
+Subject: [PATCH 103/166] nl80211: always accept scan request with the duration
+ set
+
+Accept a scan request with the duration set even if the driver
+does not support setting the scan dwell. The duration can be used
+as a hint to the driver, but the driver may use its internal logic
+for setting the scan dwell.
+
+Signed-off-by: Avraham Stern <avraham.stern@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201129172929.9491a12f9226.Ia9c5b24fcefc5ce5592537507243391633a27e5f@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit c837cbad40d949feaff86734d637c7602ae0b56b)
+---
+ net/wireless/nl80211.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index e64a42b6bfaa..7544e1079795 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8243,12 +8243,6 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
+ 	}
+ 
+ 	if (info->attrs[NL80211_ATTR_MEASUREMENT_DURATION]) {
+-		if (!wiphy_ext_feature_isset(wiphy,
+-					NL80211_EXT_FEATURE_SET_SCAN_DWELL)) {
+-			err = -EOPNOTSUPP;
+-			goto out_free;
+-		}
+-
+ 		request->duration =
+ 			nla_get_u16(info->attrs[NL80211_ATTR_MEASUREMENT_DURATION]);
+ 		request->duration_mandatory =
+-- 
+2.25.1
+

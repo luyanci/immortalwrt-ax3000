@@ -1,0 +1,132 @@
+From be65c8a1b27d1a97a4496ec49205a9d8e03e7850 Mon Sep 17 00:00:00 2001
+From: Lev Stipakov <lstipakov@gmail.com>
+Date: Fri, 13 Nov 2020 23:46:24 +0200
+Subject: [PATCH 090/166] net: mac80211: use core API for updating TX/RX stats
+
+Commits
+
+  d3fd65484c781 ("net: core: add dev_sw_netstats_tx_add")
+  451b05f413d3f ("net: netdevice.h: sw_netstats_rx_add helper)
+
+have added API to update net device per-cpu TX/RX stats.
+
+Use core API instead of ieee80211_tx/rx_stats().
+
+Signed-off-by: Lev Stipakov <lev@openvpn.net>
+Reviewed-by: Heiner Kallweit <hkallweit1@gmail.com>
+Link: https://lore.kernel.org/r/20201113214623.144663-1-lev@openvpn.net
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 36ec144f041bedc2f14b32faa2da11d4d9660003)
+---
+ net/mac80211/rx.c | 18 ++++--------------
+ net/mac80211/tx.c | 16 +++-------------
+ 2 files changed, 7 insertions(+), 27 deletions(-)
+
+diff --git a/net/mac80211/rx.c b/net/mac80211/rx.c
+index 062c2b45584e..326868d171bb 100644
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -32,16 +32,6 @@
+ #include "wme.h"
+ #include "rate.h"
+ 
+-static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
+-{
+-	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
+-
+-	u64_stats_update_begin(&tstats->syncp);
+-	tstats->rx_packets++;
+-	tstats->rx_bytes += len;
+-	u64_stats_update_end(&tstats->syncp);
+-}
+-
+ /*
+  * monitor mode reception
+  *
+@@ -842,7 +832,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
+ 
+ 			if (skb) {
+ 				skb->dev = sdata->dev;
+-				ieee80211_rx_stats(skb->dev, skb->len);
++				dev_sw_netstats_rx_add(skb->dev, skb->len);
+ 				netif_receive_skb(skb);
+ 			}
+ 		}
+@@ -2559,7 +2549,7 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
+ 	skb = rx->skb;
+ 	xmit_skb = NULL;
+ 
+-	ieee80211_rx_stats(dev, skb->len);
++	dev_sw_netstats_rx_add(dev, skb->len);
+ 
+ 	if (rx->sta) {
+ 		/* The seqno index has the same property as needed
+@@ -3698,7 +3688,7 @@ static void ieee80211_rx_cooked_monitor(struct ieee80211_rx_data *rx,
+ 		}
+ 
+ 		prev_dev = sdata->dev;
+-		ieee80211_rx_stats(sdata->dev, skb->len);
++		dev_sw_netstats_rx_add(sdata->dev, skb->len);
+ 	}
+ 
+ 	if (prev_dev) {
+@@ -4411,7 +4401,7 @@ static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,
+ 
+ 	skb->dev = fast_rx->dev;
+ 
+-	ieee80211_rx_stats(fast_rx->dev, skb->len);
++	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
+ 
+ 	/* The seqno index has the same property as needed
+ 	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 01eb08527817..6422da6690f7 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -38,16 +38,6 @@
+ 
+ /* misc utils */
+ 
+-static inline void ieee80211_tx_stats(struct net_device *dev, u32 len)
+-{
+-	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
+-
+-	u64_stats_update_begin(&tstats->syncp);
+-	tstats->tx_packets++;
+-	tstats->tx_bytes += len;
+-	u64_stats_update_end(&tstats->syncp);
+-}
+-
+ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
+ 				 struct sk_buff *skb, int group_addr,
+ 				 int next_frag_len)
+@@ -3386,7 +3376,7 @@ static void ieee80211_xmit_fast_finish(struct ieee80211_sub_if_data *sdata,
+ 	if (key)
+ 		info->control.hw_key = &key->conf;
+ 
+-	ieee80211_tx_stats(skb->dev, skb->len);
++	dev_sw_netstats_tx_add(skb->dev, 1, skb->len);
+ 
+ 	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
+ 		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
+@@ -4004,7 +3994,7 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
+ 			goto out;
+ 		}
+ 
+-		ieee80211_tx_stats(dev, skb->len);
++		dev_sw_netstats_tx_add(dev, 1, skb->len);
+ 
+ 		ieee80211_xmit(sdata, sta, skb);
+ 	}
+@@ -4231,7 +4221,7 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
+ 
+ 	info->hw_queue = sdata->vif.hw_queue[skb_get_queue_mapping(skb)];
+ 
+-	ieee80211_tx_stats(dev, skb->len);
++	dev_sw_netstats_tx_add(dev, 1, skb->len);
+ 
+ 	sta->tx_stats.bytes[skb_get_queue_mapping(skb)] += skb->len;
+ 	sta->tx_stats.packets[skb_get_queue_mapping(skb)]++;
+-- 
+2.25.1
+

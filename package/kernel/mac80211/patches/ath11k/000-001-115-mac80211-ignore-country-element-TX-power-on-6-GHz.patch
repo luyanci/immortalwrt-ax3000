@@ -1,0 +1,49 @@
+From 3ffd396b32b8577f8d440f129154043ed657d211 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 6 Dec 2020 14:54:47 +0200
+Subject: [PATCH 115/166] mac80211: ignore country element TX power on 6 GHz
+
+Updates to the 802.11ax draft are coming that deprecate the
+country element in favour of the transmit power envelope
+element, and make the maximum transmit power level field in
+the triplets reserved, so if we parse them we'd use 0 dBm
+transmit power.
+
+Follow suit and completely ignore the element on 6 GHz for
+purposes of determining TX power.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201206145305.9abf9f6b4f88.Icb6e52af586edcc74f1f0360e8f6fc9ef2bfe8f5@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 2dedfe1dbdf27ac344584ed03c3876c85d2779fb)
+---
+ net/mac80211/mlme.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index 3e124eee91d4..35e710ca75e4 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1572,9 +1572,17 @@ ieee80211_find_80211h_pwr_constr(struct ieee80211_sub_if_data *sdata,
+ 		chan_increment = 1;
+ 		break;
+ 	case NL80211_BAND_5GHZ:
+-	case NL80211_BAND_6GHZ:
+ 		chan_increment = 4;
+ 		break;
++	case NL80211_BAND_6GHZ:
++		/*
++		 * In the 6 GHz band, the "maximum transmit power level"
++		 * field in the triplets is reserved, and thus will be
++		 * zero and we shouldn't use it to control TX power.
++		 * The actual TX power will be given in the transmit
++		 * power envelope element instead.
++		 */
++		return false;
+ 	}
+ 
+ 	/* find channel */
+-- 
+2.25.1
+

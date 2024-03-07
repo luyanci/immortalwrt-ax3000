@@ -1,0 +1,32 @@
+From 2715b3d2128c23d064ebdcf524ae87e95fa48c2e Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Fri, 12 Feb 2021 11:36:27 +0000
+Subject: [PATCH 78/93] ath11k: debugfs: Fix spelling mistake "Opportunies" ->
+ "Opportunities"
+
+There is a spelling mistake in some debug text, fix this.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210212113627.212787-1-colin.king@canonical.com
+(cherry picked from commit 9c349dbd07523ed175b7f5ec42c4b4a1bc7ae1df)
+---
+ drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
+index e13684343ec3..ec93f14e6d2a 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
+@@ -3851,7 +3851,7 @@ htt_print_pdev_obss_pd_stats_tlv_v(const void *tag_buf,
+ 			   htt_stats_buf->num_non_srg_ppdu_tried);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "Non-SRG success PPDU = %u\n",
+ 			   htt_stats_buf->num_non_srg_ppdu_success);
+-	len += HTT_DBG_OUT(buf + len, buf_len - len, "SRG Opportunies = %u\n",
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "SRG Opportunities = %u\n",
+ 			   htt_stats_buf->num_srg_opportunities);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "SRG tried PPDU = %u\n",
+ 			   htt_stats_buf->num_srg_ppdu_tried);
+-- 
+2.25.1
+

@@ -1,0 +1,78 @@
+From c64e49a0c1ff4302a2892873325ed4d0ecf4e7d4 Mon Sep 17 00:00:00 2001
+From: Vamsi Krishna <vamsin@codeaurora.org>
+Date: Thu, 29 Oct 2020 20:34:57 +0200
+Subject: [PATCH 009/166] cfg80211: Add support to calculate and report
+ 4096-QAM HE rates
+
+Drivers supporting 4096-QAM rates as a vendor extension in HE mode need
+to update the correct rate info to userspace while using 4096-QAM (MCS12
+and MCS13) in HE mode. Add support to calculate bitrates of HE-MCS12 and
+HE-MCS13 which represent the 4096-QAM modulation schemes. The MCS12 and
+MCS13 bitrates are defined in IEEE P802.11be/D0.1.
+
+In addition, scale up the bitrates by 3*2048 in order to accommodate
+calculations for the new MCS12 and MCS13 rates without losing fraction
+values.
+
+Signed-off-by: Vamsi Krishna <vamsin@codeaurora.org>
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Link: https://lore.kernel.org/r/20201029183457.7005-1-jouni@codeaurora.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 9c97c88d2f4b221d99491c3196da42004c195fb5)
+---
+ net/wireless/util.c | 32 +++++++++++++++++---------------
+ 1 file changed, 17 insertions(+), 15 deletions(-)
+
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+index f01746894a4e..5b6c80ae564a 100644
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -1276,20 +1276,22 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
+ 
+ static u32 cfg80211_calculate_bitrate_he(struct rate_info *rate)
+ {
+-#define SCALE 2048
+-	u16 mcs_divisors[12] = {
+-		34133, /* 16.666666... */
+-		17067, /*  8.333333... */
+-		11378, /*  5.555555... */
+-		 8533, /*  4.166666... */
+-		 5689, /*  2.777777... */
+-		 4267, /*  2.083333... */
+-		 3923, /*  1.851851... */
+-		 3413, /*  1.666666... */
+-		 2844, /*  1.388888... */
+-		 2560, /*  1.250000... */
+-		 2276, /*  1.111111... */
+-		 2048, /*  1.000000... */
++#define SCALE 6144
++	u32 mcs_divisors[14] = {
++		102399, /* 16.666666... */
++		 51201, /*  8.333333... */
++		 34134, /*  5.555555... */
++		 25599, /*  4.166666... */
++		 17067, /*  2.777777... */
++		 12801, /*  2.083333... */
++		 11769, /*  1.851851... */
++		 10239, /*  1.666666... */
++		  8532, /*  1.388888... */
++		  7680, /*  1.250000... */
++		  6828, /*  1.111111... */
++		  6144, /*  1.000000... */
++		  5690, /*  0.926106... */
++		  5120, /*  0.833333... */
+ 	};
+ 	u32 rates_160M[3] = { 960777777, 907400000, 816666666 };
+ 	u32 rates_969[3] =  { 480388888, 453700000, 408333333 };
+@@ -1301,7 +1303,7 @@ static u32 cfg80211_calculate_bitrate_he(struct rate_info *rate)
+ 	u64 tmp;
+ 	u32 result;
+ 
+-	if (WARN_ON_ONCE(rate->mcs > 11))
++	if (WARN_ON_ONCE(rate->mcs > 13))
+ 		return 0;
+ 
+ 	if (WARN_ON_ONCE(rate->he_gi > NL80211_RATE_INFO_HE_GI_3_2))
+-- 
+2.25.1
+

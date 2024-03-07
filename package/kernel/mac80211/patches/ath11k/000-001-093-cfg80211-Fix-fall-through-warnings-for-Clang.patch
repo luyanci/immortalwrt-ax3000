@@ -1,0 +1,33 @@
+From ec2c79dcd5d73215375069310a8240ba2c83491f Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Fri, 20 Nov 2020 12:34:50 -0600
+Subject: [PATCH 093/166] cfg80211: Fix fall-through warnings for Clang
+
+In preparation to enable -Wimplicit-fallthrough for Clang, fix a warning
+by explicitly adding a break statement instead of letting the code fall
+through to the next case.
+
+Link: https://github.com/KSPP/linux/issues/115
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Link: https://lore.kernel.org/r/ed94a115106fa9c6df94d09b2a6c5791c618c4f2.1605896059.git.gustavoars@kernel.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 01c9c0ab3524f2cd6fbceec6488aa4094d8ef9d9)
+---
+ net/wireless/util.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+index 5af88037f1fb..79c5780e3033 100644
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -335,6 +335,7 @@ int cfg80211_validate_key_settings(struct cfg80211_registered_device *rdev,
+ 	case WLAN_CIPHER_SUITE_WEP104:
+ 		if (key_idx > 3)
+ 			return -EINVAL;
++		break;
+ 	default:
+ 		break;
+ 	}
+-- 
+2.25.1
+

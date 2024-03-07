@@ -1,0 +1,58 @@
+From ca5d1c371111cf6ca11591f56a400cbd39fd9169 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 16 Feb 2021 09:16:03 +0200
+Subject: [PATCH 82/93] ath11k: Update memory segment count for qcn9074
+
+QCN9074 FW requests three types memory segments during the boot,
+	qmi mem seg type 1 of size 15728640
+	qmi mem seg type 4 of size 3735552
+	qmi mem seg type 3 of size 1048576
+Segment type 3 is for M3 coredump memory.
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612946530-28504-5-git-send-email-akolli@codeaurora.org
+(cherry picked from commit 5f67d306155e6a757f0b6b2b061e3ea13f44c536)
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 2 +-
+ drivers/net/wireless/ath/ath11k/qmi.h | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 1aca841cd147..eb1b987c9df2 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -1765,7 +1765,7 @@ static int ath11k_qmi_alloc_target_mem_chunk(struct ath11k_base *ab)
+ 						  &chunk->paddr,
+ 						  GFP_KERNEL);
+ 		if (!chunk->vaddr) {
+-			if (ab->qmi.mem_seg_count <= 2) {
++			if (ab->qmi.mem_seg_count <= ATH11K_QMI_FW_MEM_REQ_SEGMENT_CNT) {
+ 				ath11k_dbg(ab, ATH11K_DBG_QMI,
+ 					   "qmi dma allocation failed (%d B type %u), will try later with small size\n",
+ 					    chunk->size,
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.h b/drivers/net/wireless/ath/ath11k/qmi.h
+index 1797c3b59f48..a7d01c295e77 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -26,6 +26,7 @@
+ #define ATH11K_QMI_WLANFW_MAX_NUM_MEM_SEG_V01	52
+ #define ATH11K_QMI_CALDB_SIZE			0x480000
+ #define ATH11K_QMI_BDF_EXT_STR_LENGTH		0x20
++#define ATH11K_QMI_FW_MEM_REQ_SEGMENT_CNT	3
+ 
+ #define QMI_WLFW_REQUEST_MEM_IND_V01		0x0035
+ #define QMI_WLFW_FW_MEM_READY_IND_V01		0x0037
+@@ -141,6 +142,7 @@ struct ath11k_qmi {
+ #define QMI_IPQ8074_FW_MEM_MODE				0xFF
+ #define HOST_DDR_REGION_TYPE				0x1
+ #define BDF_MEM_REGION_TYPE				0x2
++#define M3_DUMP_REGION_TYPE				0x3
+ #define CALDB_MEM_REGION_TYPE				0x4
+ 
+ struct qmi_wlanfw_host_cap_req_msg_v01 {
+-- 
+2.25.1
+

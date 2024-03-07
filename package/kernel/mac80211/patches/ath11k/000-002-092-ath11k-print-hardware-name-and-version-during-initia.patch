@@ -1,0 +1,44 @@
+From 12b2318ef8fa94ab28c1507f97f309fe53147fe9 Mon Sep 17 00:00:00 2001
+From: Kalle Valo <kvalo@codeaurora.org>
+Date: Wed, 17 Feb 2021 21:16:40 +0200
+Subject: [PATCH 92/93] ath11k: print hardware name and version during
+ initialisation
+
+This way it's easy for the user to find what device is actually installed. This
+also helps reporting bugs.
+
+Screenshot:
+
+[  459.988812] ath11k_pci 0000:06:00.0: BAR 0: assigned [mem 0xdb000000-0xdbffffff 64bit]
+[  459.988867] ath11k_pci 0000:06:00.0: enabling device (0000 -> 0002)
+[  459.997048] ath11k_pci 0000:06:00.0: qca6390 hw2.0
+[  460.058093] mhi mhi0: Requested to power ON
+[  460.059741] mhi mhi0: Power on setup success
+[  460.476924] ath11k_pci 0000:06:00.0: chip_id 0x0 chip_family 0xb board_id 0xff soc_id 0xffffffff
+[  460.477032] ath11k_pci 0000:06:00.0: fw_version 0x101c06cc fw_build_timestamp 2020-06-24 19:50 fw_build_id
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1613589400-18891-1-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 6b7abacb9cbe45894a385ea1766fd4febbd6e0df)
+---
+ drivers/net/wireless/ath/ath11k/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index ddedc331edef..77ce3347ab86 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1017,7 +1017,7 @@ static int ath11k_init_hw_params(struct ath11k_base *ab)
+ 
+ 	ab->hw_params = *hw_params;
+ 
+-	ath11k_dbg(ab, ATH11K_DBG_BOOT, "Hardware name %s\n", ab->hw_params.name);
++	ath11k_info(ab, "%s\n", ab->hw_params.name);
+ 
+ 	return 0;
+ }
+-- 
+2.25.1
+

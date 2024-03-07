@@ -1,0 +1,97 @@
+From c8ca31babf8d48b2958042ce4fda545edbca8da0 Mon Sep 17 00:00:00 2001
+From: Carl Huang <cjhuang@codeaurora.org>
+Date: Fri, 11 Dec 2020 19:35:49 +0200
+Subject: [PATCH 140/166] ath11k: hif: add ce irq enable and disable functions
+
+Add ce irq enable and disable hif layer functions, so core module can enable
+enable them without cleaning pipe and refilling pipe. Needed for suspend.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Carl Huang <cjhuang@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607708150-21066-10-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit d578ec2a0d5cd2859ff6a1347f4429d6c7f730a3)
+---
+ drivers/net/wireless/ath/ath11k/hif.h | 14 ++++++++++++++
+ drivers/net/wireless/ath/ath11k/pci.c | 19 ++++++++++++++++++-
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hif.h b/drivers/net/wireless/ath/ath11k/hif.h
+index 147f1e802ca9..6285c52afc44 100644
+--- a/drivers/net/wireless/ath/ath11k/hif.h
++++ b/drivers/net/wireless/ath/ath11k/hif.h
+@@ -26,8 +26,22 @@ struct ath11k_hif_ops {
+ 				   u32 *base_vector);
+ 	void (*get_msi_address)(struct ath11k_base *ab, u32 *msi_addr_lo,
+ 				u32 *msi_addr_hi);
++	void (*ce_irq_enable)(struct ath11k_base *ab);
++	void (*ce_irq_disable)(struct ath11k_base *ab);
+ };
+ 
++static inline void ath11k_hif_ce_irq_enable(struct ath11k_base *ab)
++{
++	if (ab->hif.ops->ce_irq_enable)
++		ab->hif.ops->ce_irq_enable(ab);
++}
++
++static inline void ath11k_hif_ce_irq_disable(struct ath11k_base *ab)
++{
++	if (ab->hif.ops->ce_irq_disable)
++		ab->hif.ops->ce_irq_disable(ab);
++}
++
+ static inline int ath11k_hif_start(struct ath11k_base *sc)
+ {
+ 	return sc->hif.ops->start(sc);
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index ee1c2edefa20..e720ac6354fc 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -946,11 +946,16 @@ static void ath11k_pci_kill_tasklets(struct ath11k_base *ab)
+ 	}
+ }
+ 
+-static void ath11k_pci_stop(struct ath11k_base *ab)
++static void ath11k_pci_ce_irq_disable_sync(struct ath11k_base *ab)
+ {
+ 	ath11k_pci_ce_irqs_disable(ab);
+ 	ath11k_pci_sync_ce_irqs(ab);
+ 	ath11k_pci_kill_tasklets(ab);
++}
++
++static void ath11k_pci_stop(struct ath11k_base *ab)
++{
++	ath11k_pci_ce_irq_disable_sync(ab);
+ 	ath11k_ce_cleanup_pipes(ab);
+ }
+ 
+@@ -966,6 +971,16 @@ static int ath11k_pci_start(struct ath11k_base *ab)
+ 	return 0;
+ }
+ 
++static void ath11k_pci_hif_ce_irq_enable(struct ath11k_base *ab)
++{
++	ath11k_pci_ce_irqs_enable(ab);
++}
++
++static void ath11k_pci_hif_ce_irq_disable(struct ath11k_base *ab)
++{
++	ath11k_pci_ce_irq_disable_sync(ab);
++}
++
+ static int ath11k_pci_map_service_to_pipe(struct ath11k_base *ab, u16 service_id,
+ 					  u8 *ul_pipe, u8 *dl_pipe)
+ {
+@@ -1023,6 +1038,8 @@ static const struct ath11k_hif_ops ath11k_pci_hif_ops = {
+ 	.get_msi_address =  ath11k_pci_get_msi_address,
+ 	.get_user_msi_vector = ath11k_get_user_msi_assignment,
+ 	.map_service_to_pipe = ath11k_pci_map_service_to_pipe,
++	.ce_irq_enable = ath11k_pci_hif_ce_irq_enable,
++	.ce_irq_disable = ath11k_pci_hif_ce_irq_disable,
+ };
+ 
+ static int ath11k_pci_probe(struct pci_dev *pdev,
+-- 
+2.25.1
+

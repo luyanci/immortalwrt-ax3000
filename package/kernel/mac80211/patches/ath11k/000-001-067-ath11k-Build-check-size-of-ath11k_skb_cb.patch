@@ -1,0 +1,33 @@
+From 691cb660b5e8070e6c2acc8e49774de13cb0cc0a Mon Sep 17 00:00:00 2001
+From: Sven Eckelmann <sven@narfation.org>
+Date: Tue, 24 Nov 2020 17:59:16 +0200
+Subject: [PATCH 067/166] ath11k: Build check size of ath11k_skb_cb
+
+It is rather easy to add more entries to ath11k_skb_cb while forgetting the
+size limit of ieee80211_tx_info->driver_data. So just check this during the
+build to reduce the change of accidental buffer overflow in the skbuff->cb.
+
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201119154235.263250-3-sven@narfation.org
+(cherry picked from commit d35d1375493b0f962a5da5aef015b8bd215e059d)
+---
+ drivers/net/wireless/ath/ath11k/core.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 25609ff300a5..317b15e333d3 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -909,6 +909,8 @@ static inline const char *ath11k_scan_state_str(enum ath11k_scan_state state)
+ 
+ static inline struct ath11k_skb_cb *ATH11K_SKB_CB(struct sk_buff *skb)
+ {
++	BUILD_BUG_ON(sizeof(struct ath11k_skb_cb) >
++		     IEEE80211_TX_INFO_DRIVER_DATA_SIZE);
+ 	return (struct ath11k_skb_cb *)&IEEE80211_SKB_CB(skb)->driver_data;
+ }
+ 
+-- 
+2.25.1
+

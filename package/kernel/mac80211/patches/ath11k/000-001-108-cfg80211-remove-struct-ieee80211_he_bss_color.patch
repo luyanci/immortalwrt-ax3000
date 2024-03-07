@@ -1,0 +1,62 @@
+From 100a629458f9575bb8f002eadca082cf0ea08f19 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 6 Dec 2020 14:54:40 +0200
+Subject: [PATCH 108/166] cfg80211: remove struct ieee80211_he_bss_color
+
+We don't really use this struct, we're now using
+struct cfg80211_he_bss_color instead.
+
+Change the one place in mac80211 that's using the old
+name to use struct assignment instead of memcpy() and
+thus remove the wrong sizeof while at it.
+
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201206145305.f6698d97ae4e.Iba2dffcb79c4ab80bde7407609806010b55edfdf@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 539a36ba2f07110e6d05eb795c2b6fd6a7b4b881)
+---
+ include/net/cfg80211.h | 13 -------------
+ net/mac80211/cfg.c     |  3 +--
+ 2 files changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index d9b67eed4f75..1a79d6baa254 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -302,19 +302,6 @@ struct cfg80211_he_bss_color {
+ 	bool partial;
+ };
+ 
+-/**
+- * struct ieee80211_he_bss_color - AP settings for BSS coloring
+- *
+- * @color: the current color.
+- * @disabled: is the feature disabled.
+- * @partial: define the AID equation.
+- */
+-struct ieee80211_he_bss_color {
+-	u8 color;
+-	bool disabled;
+-	bool partial;
+-};
+-
+ /**
+  * struct ieee80211_sta_ht_cap - STA's HT capabilities
+  *
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+index 7da343efd090..1344ce27353d 100644
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1124,8 +1124,7 @@ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
+ 	sdata->vif.bss_conf.twt_responder = params->twt_responder;
+ 	memcpy(&sdata->vif.bss_conf.he_obss_pd, &params->he_obss_pd,
+ 	       sizeof(struct ieee80211_he_obss_pd));
+-	memcpy(&sdata->vif.bss_conf.he_bss_color, &params->he_bss_color,
+-	       sizeof(struct ieee80211_he_bss_color));
++	sdata->vif.bss_conf.he_bss_color = params->he_bss_color;
+ 	sdata->vif.bss_conf.s1g = params->chandef.chan->band ==
+ 				  NL80211_BAND_S1GHZ;
+ 
+-- 
+2.25.1
+

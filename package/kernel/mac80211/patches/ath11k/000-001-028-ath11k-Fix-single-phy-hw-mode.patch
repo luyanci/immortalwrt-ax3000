@@ -1,0 +1,39 @@
+From 6d78e88ee8a73eb45c08907863f9c4acbb035c7f Mon Sep 17 00:00:00 2001
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Wed, 4 Nov 2020 23:05:31 +0530
+Subject: [PATCH 028/166] ath11k: Fix single phy hw mode
+
+driver not able to bootup in the single radio configured board.
+single phy hw mode is converted to invalid hw mode and sent to FW
+through wmi init cmd. In that case driver is not receiving wmi
+ready event which leads to driver bootup fail. single phy hw mode
+is a valid for single radio configured board. so removed the
+conversion logic.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.1.0.1-01238-QCAHKSWPL_SILICONZ-2
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604511331-22477-1-git-send-email-periyasa@codeaurora.org
+(cherry picked from commit 9fb13b81e1456c3911b86167470fc05dc9114a07)
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 8049c96744b2..40032c2b4975 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -3486,9 +3486,6 @@ int ath11k_wmi_cmd_init(struct ath11k_base *ab)
+ 	init_param.hw_mode_id = wmi_sc->preferred_hw_mode;
+ 	init_param.mem_chunks = wmi_sc->mem_chunks;
+ 
+-	if (wmi_sc->preferred_hw_mode == WMI_HOST_HW_MODE_SINGLE)
+-		init_param.hw_mode_id = WMI_HOST_HW_MODE_MAX;
+-
+ 	if (ab->hw_params.needs_band_to_mac) {
+ 		init_param.num_band_to_mac = ab->num_radios;
+ 		ath11k_fill_band_to_mac_param(ab, init_param.band_to_mac);
+-- 
+2.25.1
+

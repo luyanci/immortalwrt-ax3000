@@ -1,0 +1,40 @@
+From a0ba5a71e50a850e2af4f6670c52318fa7637b10 Mon Sep 17 00:00:00 2001
+From: Ramya Gnanasekar <rgnanase@codeaurora.org>
+Date: Mon, 9 Nov 2020 20:17:09 +0530
+Subject: [PATCH 058/166] ath11k: Fix beamformee STS in HE cap
+
+STS Beamformee capability sent from firmware is overwritten as
+num_tx_chains - 1.
+When num_tx_chains is 2, then STS is set to invalid value 1.
+Since STS is not limited by number of TX chain, not overwriting the
+capability received from firmware.
+
+Tested on: IPQ6018 WLAN.HK.2.4.0.1-00303-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604933229-15815-1-git-send-email-rgnanase@codeaurora.org
+(cherry picked from commit 1057db1b8b7661c5031caa0244dfa6bee9adc938)
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index f4aedd5aefaf..25846bd6d02d 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3779,11 +3779,6 @@ static int ath11k_mac_copy_he_cap(struct ath11k *ar,
+ 
+ 		he_cap_elem->mac_cap_info[1] &=
+ 			IEEE80211_HE_MAC_CAP1_TF_MAC_PAD_DUR_MASK;
+-		he_cap_elem->phy_cap_info[4] &=
+-			~IEEE80211_HE_PHY_CAP4_BEAMFORMEE_MAX_STS_UNDER_80MHZ_MASK;
+-		he_cap_elem->phy_cap_info[4] &=
+-			~IEEE80211_HE_PHY_CAP4_BEAMFORMEE_MAX_STS_ABOVE_80MHZ_MASK;
+-		he_cap_elem->phy_cap_info[4] |= (ar->num_tx_chains - 1) << 2;
+ 
+ 		he_cap_elem->phy_cap_info[5] &=
+ 			~IEEE80211_HE_PHY_CAP5_BEAMFORMEE_NUM_SND_DIM_UNDER_80MHZ_MASK;
+-- 
+2.25.1
+

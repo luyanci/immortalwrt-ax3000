@@ -1,0 +1,73 @@
+From 505da8179790df60a73a05808d8466a1c16bdaeb Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:23:49 +0000
+Subject: [PATCH 039/166] ath9k: ar5008_phy: Demote half completed function
+ headers
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/ath9k/ar5008_phy.c:119: warning: Function parameter or member 'rfBuf' not described in 'ar5008_hw_phy_modify_rx_buffer'
+ drivers/net/wireless/ath/ath9k/ar5008_phy.c:119: warning: Function parameter or member 'reg32' not described in 'ar5008_hw_phy_modify_rx_buffer'
+ drivers/net/wireless/ath/ath9k/ar5008_phy.c:119: warning: Function parameter or member 'numBits' not described in 'ar5008_hw_phy_modify_rx_buffer'
+ drivers/net/wireless/ath/ath9k/ar5008_phy.c:119: warning: Function parameter or member 'firstBit' not described in 'ar5008_hw_phy_modify_rx_buffer'
+
+Cc: QCA ath9k Development <ath9k-devel@qca.qualcomm.com>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-21-lee.jones@linaro.org
+(cherry picked from commit 8cc107b57109245630cde66909c995949562155d)
+---
+ drivers/net/wireless/ath/ath9k/ar5008_phy.c | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar5008_phy.c b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+index 2fa30834a88d..6610d76131fa 100644
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -102,13 +102,8 @@ static void ar5008_write_bank6(struct ath_hw *ah, unsigned int *writecnt)
+ 	REGWRITE_BUFFER_FLUSH(ah);
+ }
+ 
+-/**
++/*
+  * ar5008_hw_phy_modify_rx_buffer() - perform analog swizzling of parameters
+- * @rfbuf:
+- * @reg32:
+- * @numBits:
+- * @firstBit:
+- * @column:
+  *
+  * Performs analog "swizzling" of parameters into their location.
+  * Used on external AR2133/AR5133 radios.
+@@ -198,10 +193,8 @@ static void ar5008_hw_force_bias(struct ath_hw *ah, u16 synth_freq)
+ 	ar5008_write_bank6(ah, &reg_writes);
+ }
+ 
+-/**
++/*
+  * ar5008_hw_set_channel - tune to a channel on the external AR2133/AR5133 radios
+- * @ah: atheros hardware structure
+- * @chan:
+  *
+  * For the external AR2133/AR5133 radios, takes the MHz channel value and set
+  * the channel value. Assumes writes enabled to analog bus and bank6 register
+@@ -430,10 +423,8 @@ void ar5008_hw_cmn_spur_mitigate(struct ath_hw *ah,
+ 	REG_WRITE(ah, AR_PHY_MASK2_P_61_45, tmp_mask);
+ }
+ 
+-/**
++/*
+  * ar5008_hw_spur_mitigate - convert baseband spur frequency for external radios
+- * @ah: atheros hardware structure
+- * @chan:
+  *
+  * For non single-chip solutions. Converts to baseband spur frequency given the
+  * input channel frequency and compute register settings below.
+-- 
+2.25.1
+

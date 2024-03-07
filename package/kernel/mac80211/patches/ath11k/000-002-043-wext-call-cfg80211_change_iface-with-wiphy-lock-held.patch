@@ -1,0 +1,45 @@
+From 398fc99514eedc286d6334298a90fb94ff8bb138 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Thu, 28 Jan 2021 18:35:26 +0100
+Subject: [PATCH 43/93] wext: call cfg80211_change_iface() with wiphy lock held
+
+This is needed now that all the driver callbacks are protected by
+the wiphy lock rather than (just) the RTNL.
+
+Fixes: a05829a7222e ("cfg80211: avoid holding the RTNL when calling the driver")
+Reported-by: syzbot+d2d412349f88521938aa@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/r/20210128183454.e81bc6789b4b.I5deb8b6bfdc8b4ea7696cb2447ee6c58c7ce9a4e@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit bae173563cbf469533d0c38534b874d4a2df0c85)
+---
+ net/wireless/wext-compat.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/net/wireless/wext-compat.c b/net/wireless/wext-compat.c
+index 2e35cb78221e..0c6ea6212496 100644
+--- a/net/wireless/wext-compat.c
++++ b/net/wireless/wext-compat.c
+@@ -39,6 +39,7 @@ int cfg80211_wext_siwmode(struct net_device *dev, struct iw_request_info *info,
+ 	struct cfg80211_registered_device *rdev;
+ 	struct vif_params vifparams;
+ 	enum nl80211_iftype type;
++	int ret;
+ 
+ 	rdev = wiphy_to_rdev(wdev->wiphy);
+ 
+@@ -61,7 +62,11 @@ int cfg80211_wext_siwmode(struct net_device *dev, struct iw_request_info *info,
+ 
+ 	memset(&vifparams, 0, sizeof(vifparams));
+ 
+-	return cfg80211_change_iface(rdev, dev, type, &vifparams);
++	wiphy_lock(wdev->wiphy);
++	ret = cfg80211_change_iface(rdev, dev, type, &vifparams);
++	wiphy_unlock(wdev->wiphy);
++
++	return ret;
+ }
+ EXPORT_WEXT_HANDLER(cfg80211_wext_siwmode);
+ 
+-- 
+2.25.1
+

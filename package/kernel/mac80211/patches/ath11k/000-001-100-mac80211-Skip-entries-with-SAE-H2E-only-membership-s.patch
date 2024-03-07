@@ -1,0 +1,45 @@
+From 87e89d983b1805519a1bb0a5f5cf8123c9998a05 Mon Sep 17 00:00:00 2001
+From: Ilan Peer <ilan.peer@intel.com>
+Date: Sun, 29 Nov 2020 17:30:47 +0200
+Subject: [PATCH 100/166] mac80211: Skip entries with SAE H2E only membership
+ selector
+
+When parsing supported rates IE.
+
+Signed-off-by: Ilan Peer <ilan.peer@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201129172929.8228e2be791e.I626c93241fef66bc71aa0cb9719aba1b11232cf1@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 3598ae87fe44896cc2aae76bfb3febf1256943c7)
+---
+ net/mac80211/mlme.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index b0afb61d9e84..6de63ba6b1c8 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3199,8 +3199,8 @@ static void ieee80211_get_rates(struct ieee80211_supported_band *sband,
+ 			*have_higher_than_11mbit = true;
+ 
+ 		/*
+-		 * Skip HT, VHT and HE BSS membership selectors since they're
+-		 * not rates.
++		 * Skip HT, VHT, HE and SAE H2E only BSS membership selectors
++		 * since they're not rates.
+ 		 *
+ 		 * Note: Even though the membership selector and the basic
+ 		 *	 rate flag share the same bit, they are not exactly
+@@ -3208,7 +3208,8 @@ static void ieee80211_get_rates(struct ieee80211_supported_band *sband,
+ 		 */
+ 		if (supp_rates[i] == (0x80 | BSS_MEMBERSHIP_SELECTOR_HT_PHY) ||
+ 		    supp_rates[i] == (0x80 | BSS_MEMBERSHIP_SELECTOR_VHT_PHY) ||
+-		    supp_rates[i] == (0x80 | BSS_MEMBERSHIP_SELECTOR_HE_PHY))
++		    supp_rates[i] == (0x80 | BSS_MEMBERSHIP_SELECTOR_HE_PHY) ||
++		    supp_rates[i] == (0x80 | BSS_MEMBERSHIP_SELECTOR_SAE_H2E))
+ 			continue;
+ 
+ 		for (j = 0; j < sband->n_bitrates; j++) {
+-- 
+2.25.1
+

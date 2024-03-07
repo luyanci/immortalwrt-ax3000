@@ -1,0 +1,126 @@
+From 5055ee67f0c90e8976d1431c689d9dd3192d0515 Mon Sep 17 00:00:00 2001
+From: Abhishek Kumar <kuabhs@chromium.org>
+Date: Wed, 9 Dec 2020 09:11:18 +0200
+Subject: [PATCH 123/166] ath10k: add option for chip-id based BDF selection
+
+In some devices difference in chip-id should be enough to pick
+the right BDF. Add another support for chip-id based BDF selection.
+With this new option, ath10k supports 2 fallback options.
+
+The board name with chip-id as option looks as follows
+board name 'bus=snoc,qmi-board-id=ff,qmi-chip-id=320'
+
+Tested-on: WCN3990 hw1.0 SNOC WLAN.HL.3.2.2-00696-QCAHLSWMTPL-1
+Tested-on: QCA6174 HW3.2 WLAN.RM.4.4.1-00157-QCARMSWPZ-1
+Signed-off-by: Abhishek Kumar <kuabhs@chromium.org>
+Reviewed-by: Douglas Anderson <dianders@chromium.org>
+Reviewed-by: Rakesh Pillai <pillair@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201207231824.v3.1.Ia6b95087ca566f77423f3802a78b946f7b593ff5@changeid
+(cherry picked from commit 2bc2b87bb35a4d7b022016819fc28ce9e2b13adc)
+---
+ drivers/net/wireless/ath/ath10k/core.c | 43 +++++++++++++++++++-------
+ 1 file changed, 32 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/ath10k/core.c
+index 796107b14d9f..93bbc0134bfe 100644
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -1350,7 +1350,8 @@ static int ath10k_core_search_bd(struct ath10k *ar,
+ 
+ static int ath10k_core_fetch_board_data_api_n(struct ath10k *ar,
+ 					      const char *boardname,
+-					      const char *fallback_boardname,
++					      const char *fallback_boardname1,
++					      const char *fallback_boardname2,
+ 					      const char *filename)
+ {
+ 	size_t len, magic_len;
+@@ -1399,8 +1400,11 @@ static int ath10k_core_fetch_board_data_api_n(struct ath10k *ar,
+ 	ret = ath10k_core_search_bd(ar, boardname, data, len);
+ 
+ 	/* if we didn't find it and have a fallback name, try that */
+-	if (ret == -ENOENT && fallback_boardname)
+-		ret = ath10k_core_search_bd(ar, fallback_boardname, data, len);
++	if (ret == -ENOENT && fallback_boardname1)
++		ret = ath10k_core_search_bd(ar, fallback_boardname1, data, len);
++
++	if (ret == -ENOENT && fallback_boardname2)
++		ret = ath10k_core_search_bd(ar, fallback_boardname2, data, len);
+ 
+ 	if (ret == -ENOENT) {
+ 		ath10k_err(ar,
+@@ -1420,7 +1424,8 @@ static int ath10k_core_fetch_board_data_api_n(struct ath10k *ar,
+ }
+ 
+ static int ath10k_core_create_board_name(struct ath10k *ar, char *name,
+-					 size_t name_len, bool with_variant)
++					 size_t name_len, bool with_variant,
++					 bool with_chip_id)
+ {
+ 	/* strlen(',variant=') + strlen(ar->id.bdf_ext) */
+ 	char variant[9 + ATH10K_SMBIOS_BDF_EXT_STR_LENGTH] = { 0 };
+@@ -1439,7 +1444,7 @@ static int ath10k_core_create_board_name(struct ath10k *ar, char *name,
+ 	}
+ 
+ 	if (ar->id.qmi_ids_valid) {
+-		if (with_variant && ar->id.bdf_ext[0] != '\0')
++		if (with_chip_id)
+ 			scnprintf(name, name_len,
+ 				  "bus=%s,qmi-board-id=%x,qmi-chip-id=%x%s",
+ 				  ath10k_bus_str(ar->hif.bus),
+@@ -1483,21 +1488,36 @@ static int ath10k_core_create_eboard_name(struct ath10k *ar, char *name,
+ 
+ int ath10k_core_fetch_board_file(struct ath10k *ar, int bd_ie_type)
+ {
+-	char boardname[100], fallback_boardname[100];
++	char boardname[100], fallback_boardname1[100], fallback_boardname2[100];
+ 	int ret;
+ 
+ 	if (bd_ie_type == ATH10K_BD_IE_BOARD) {
++		/* With variant and chip id */
+ 		ret = ath10k_core_create_board_name(ar, boardname,
+-						    sizeof(boardname), true);
++						    sizeof(boardname), true,
++						    true);
+ 		if (ret) {
+ 			ath10k_err(ar, "failed to create board name: %d", ret);
+ 			return ret;
+ 		}
+ 
+-		ret = ath10k_core_create_board_name(ar, fallback_boardname,
+-						    sizeof(boardname), false);
++		/* Without variant and only chip-id */
++		ret = ath10k_core_create_board_name(ar, fallback_boardname1,
++						    sizeof(boardname), false,
++						    true);
+ 		if (ret) {
+-			ath10k_err(ar, "failed to create fallback board name: %d", ret);
++			ath10k_err(ar, "failed to create 1st fallback board name: %d",
++				   ret);
++			return ret;
++		}
++
++		/* Without variant and without chip-id */
++		ret = ath10k_core_create_board_name(ar, fallback_boardname2,
++						    sizeof(boardname), false,
++						    false);
++		if (ret) {
++			ath10k_err(ar, "failed to create 2nd fallback board name: %d",
++				   ret);
+ 			return ret;
+ 		}
+ 	} else if (bd_ie_type == ATH10K_BD_IE_BOARD_EXT) {
+@@ -1511,7 +1531,8 @@ int ath10k_core_fetch_board_file(struct ath10k *ar, int bd_ie_type)
+ 
+ 	ar->bd_api = 2;
+ 	ret = ath10k_core_fetch_board_data_api_n(ar, boardname,
+-						 fallback_boardname,
++						 fallback_boardname1,
++						 fallback_boardname2,
+ 						 ATH10K_BOARD_API2_FILE);
+ 	if (!ret)
+ 		goto success;
+-- 
+2.25.1
+

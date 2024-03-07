@@ -1,0 +1,33 @@
+From af0053a0802765d31e672fb43c0e93acb37f1063 Mon Sep 17 00:00:00 2001
+From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+Date: Thu, 14 Jan 2021 09:04:49 +0100
+Subject: [PATCH 156/166] cfg80211: fix a kerneldoc markup
+
+A function has a different name between their prototype
+and its kernel-doc markup:
+	../include/net/cfg80211.h:1766: warning: expecting prototype for struct cfg80211_sar_chan_ranges. Prototype was for struct cfg80211_sar_freq_ranges instead
+
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+Link: https://lore.kernel.org/r/c7ed4bc4d9e992ead16d3d2df246f3b56dbfb1fb.1610610937.git.mchehab+huawei@kernel.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit c2083e280a3d4f71941c9c57992d4e621e4e33c5)
+---
+ include/net/cfg80211.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 1b3954afcda4..0d6f7ec86061 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1756,7 +1756,7 @@ struct cfg80211_sar_specs {
+ 
+ 
+ /**
+- * struct cfg80211_sar_chan_ranges - sar frequency ranges
++ * struct cfg80211_sar_freq_ranges - sar frequency ranges
+  * @start_freq:  start range edge frequency
+  * @end_freq:    end range edge frequency
+  */
+-- 
+2.25.1
+

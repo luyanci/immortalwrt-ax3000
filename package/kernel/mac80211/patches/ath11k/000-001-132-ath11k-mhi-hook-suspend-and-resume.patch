@@ -1,0 +1,62 @@
+From e2e74eee149233339b83eff291464f80e4f48ea1 Mon Sep 17 00:00:00 2001
+From: Carl Huang <cjhuang@codeaurora.org>
+Date: Fri, 11 Dec 2020 19:35:41 +0200
+Subject: [PATCH 132/166] ath11k: mhi: hook suspend and resume
+
+MHI suspend and resume isn't hooked in ath11k yet, so hook these
+functions needed for suspend support.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+
+Signed-off-by: Carl Huang <cjhuang@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1607708150-21066-2-git-send-email-kvalo@codeaurora.org
+(cherry picked from commit 34fb81e4eb924f73f0b0428c6c8fd3b2b44c518c)
+---
+ drivers/net/wireless/ath/ath11k/mhi.c | 11 +++++++++++
+ drivers/net/wireless/ath/ath11k/mhi.h |  3 +++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index 74f9956c603f..09858e516903 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -419,8 +419,10 @@ static int ath11k_mhi_set_state(struct ath11k_pci *ab_pci,
+ 		ret = 0;
+ 		break;
+ 	case ATH11K_MHI_SUSPEND:
++		ret = mhi_pm_suspend(ab_pci->mhi_ctrl);
+ 		break;
+ 	case ATH11K_MHI_RESUME:
++		ret = mhi_pm_resume(ab_pci->mhi_ctrl);
+ 		break;
+ 	case ATH11K_MHI_TRIGGER_RDDM:
+ 		ret = mhi_force_rddm_mode(ab_pci->mhi_ctrl);
+@@ -471,3 +473,12 @@ void ath11k_mhi_stop(struct ath11k_pci *ab_pci)
+ 	ath11k_mhi_set_state(ab_pci, ATH11K_MHI_DEINIT);
+ }
+ 
++void ath11k_mhi_suspend(struct ath11k_pci *ab_pci)
++{
++	ath11k_mhi_set_state(ab_pci, ATH11K_MHI_SUSPEND);
++}
++
++void ath11k_mhi_resume(struct ath11k_pci *ab_pci)
++{
++	ath11k_mhi_set_state(ab_pci, ATH11K_MHI_RESUME);
++}
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.h b/drivers/net/wireless/ath/ath11k/mhi.h
+index a7fd5e201d18..488dada5d31c 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.h
++++ b/drivers/net/wireless/ath/ath11k/mhi.h
+@@ -36,4 +36,7 @@ void ath11k_mhi_unregister(struct ath11k_pci *ar_pci);
+ void ath11k_mhi_set_mhictrl_reset(struct ath11k_base *ab);
+ void ath11k_mhi_clear_vector(struct ath11k_base *ab);
+ 
++void ath11k_mhi_suspend(struct ath11k_pci *ar_pci);
++void ath11k_mhi_resume(struct ath11k_pci *ar_pci);
++
+ #endif
+-- 
+2.25.1
+

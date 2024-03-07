@@ -1,0 +1,106 @@
+From fd14fe474b6beb866c1eaf2f7fe9a3d3cfa3508a Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 4 Feb 2021 17:29:17 +0100
+Subject: [PATCH 53/93] carl9170: fix struct alignment conflict
+
+Multiple structures in the carl9170 driver have alignment
+impossible alignment constraints that gcc warns about when
+building with 'make W=1':
+
+drivers/net/wireless/ath/carl9170/fwcmd.h:243:2: warning: alignment 1 of 'union <anonymous>' is less than 4 [-Wpacked-not-aligned]
+drivers/net/wireless/ath/carl9170/wlan.h:373:1: warning: alignment 1 of 'struct ar9170_rx_frame_single' is less than 2 [-Wpacked-not-aligned]
+
+In the carl9170_cmd structure, multiple members that have an explicit
+alignment requirement of four bytes are added into a union with explicit
+byte alignment, but this in turn is part of a structure that also has
+four-byte alignment.
+
+In the wlan.h header, multiple structures contain a ieee80211_hdr member
+that is required to be two-byte aligned to avoid alignmnet faults when
+processing network headers, but all members are forced to be byte-aligned
+using the __packed tag at the end of the struct definition.
+
+In both cases, leaving out the packing does not change the internal
+layout of the structure but changes the alignment constraint of the
+structure itself.
+
+Change all affected structures to only apply packing where it does
+not violate the alignment requirement of the contained structure.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Christian Lamparter <chunkeey@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210204162926.3262598-1-arnd@kernel.org
+(cherry picked from commit ca9ad549e4042089d55a68f0312647fca4cc6e87)
+---
+ drivers/net/wireless/ath/carl9170/fwcmd.h |  2 +-
+ drivers/net/wireless/ath/carl9170/wlan.h  | 20 ++++++++++----------
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/carl9170/fwcmd.h b/drivers/net/wireless/ath/carl9170/fwcmd.h
+index 56999a3b9d3b..4a500095555c 100644
+--- a/drivers/net/wireless/ath/carl9170/fwcmd.h
++++ b/drivers/net/wireless/ath/carl9170/fwcmd.h
+@@ -240,7 +240,7 @@ struct carl9170_cmd {
+ 		struct carl9170_bcn_ctrl_cmd	bcn_ctrl;
+ 		struct carl9170_rx_filter_cmd	rx_filter;
+ 		u8 data[CARL9170_MAX_CMD_PAYLOAD_LEN];
+-	} __packed;
++	} __packed __aligned(4);
+ } __packed __aligned(4);
+ 
+ #define	CARL9170_TX_STATUS_QUEUE	3
+diff --git a/drivers/net/wireless/ath/carl9170/wlan.h b/drivers/net/wireless/ath/carl9170/wlan.h
+index ea17995b32f4..bb73553fd7c2 100644
+--- a/drivers/net/wireless/ath/carl9170/wlan.h
++++ b/drivers/net/wireless/ath/carl9170/wlan.h
+@@ -367,27 +367,27 @@ struct ar9170_rx_macstatus {
+ 
+ struct ar9170_rx_frame_single {
+ 	struct ar9170_rx_head phy_head;
+-	struct ieee80211_hdr i3e;
++	struct ieee80211_hdr i3e __packed __aligned(2);
+ 	struct ar9170_rx_phystatus phy_tail;
+ 	struct ar9170_rx_macstatus macstatus;
+-} __packed;
++};
+ 
+ struct ar9170_rx_frame_head {
+ 	struct ar9170_rx_head phy_head;
+-	struct ieee80211_hdr i3e;
++	struct ieee80211_hdr i3e __packed __aligned(2);
+ 	struct ar9170_rx_macstatus macstatus;
+-} __packed;
++};
+ 
+ struct ar9170_rx_frame_middle {
+-	struct ieee80211_hdr i3e;
++	struct ieee80211_hdr i3e __packed __aligned(2);
+ 	struct ar9170_rx_macstatus macstatus;
+-} __packed;
++};
+ 
+ struct ar9170_rx_frame_tail {
+-	struct ieee80211_hdr i3e;
++	struct ieee80211_hdr i3e __packed __aligned(2);
+ 	struct ar9170_rx_phystatus phy_tail;
+ 	struct ar9170_rx_macstatus macstatus;
+-} __packed;
++};
+ 
+ struct ar9170_rx_frame {
+ 	union {
+@@ -395,8 +395,8 @@ struct ar9170_rx_frame {
+ 		struct ar9170_rx_frame_head head;
+ 		struct ar9170_rx_frame_middle middle;
+ 		struct ar9170_rx_frame_tail tail;
+-	} __packed;
+-} __packed;
++	};
++};
+ 
+ static inline u8 ar9170_get_decrypt_type(struct ar9170_rx_macstatus *t)
+ {
+-- 
+2.25.1
+

@@ -1,0 +1,48 @@
+From 68c4ccee39d12f4ca2b38b8b256eb99b7a95988d Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Sat, 7 Nov 2020 10:16:27 +0200
+Subject: [PATCH 049/166] ath9k: work around false-positive gcc warning
+
+gcc-10 shows a false-positive warning with CONFIG_KASAN:
+
+drivers/net/wireless/ath/ath9k/dynack.c: In function 'ath_dynack_sample_tx_ts':
+include/linux/etherdevice.h:290:14: warning: writing 4 bytes into a region of size 0 [-Wstringop-overflow=]
+  290 |  *(u32 *)dst = *(const u32 *)src;
+      |  ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~
+
+Until gcc is fixed, work around this by using memcpy() in place
+of ether_addr_copy(). Hopefully gcc-11 will not have this problem.
+
+Link: https://godbolt.org/z/sab1MK
+Link: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=97490
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+[kvalo@codeaurora.org: remove ifdef and add a comment]
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201026213040.3889546-8-arnd@kernel.org
+(cherry picked from commit b96fab4e36023ee37ed1aad331ddd11b77c46c42)
+---
+ drivers/net/wireless/ath/ath9k/dynack.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/dynack.c b/drivers/net/wireless/ath/ath9k/dynack.c
+index 3219715174a2..321ff54fdb42 100644
+--- a/drivers/net/wireless/ath/ath9k/dynack.c
++++ b/drivers/net/wireless/ath/ath9k/dynack.c
+@@ -246,8 +246,12 @@ void ath_dynack_sample_tx_ts(struct ath_hw *ah, struct sk_buff *skb,
+ 	ridx = ts->ts_rateindex;
+ 
+ 	da->st_rbf.ts[da->st_rbf.t_rb].tstamp = ts->ts_tstamp;
+-	ether_addr_copy(da->st_rbf.addr[da->st_rbf.t_rb].h_dest, hdr->addr1);
+-	ether_addr_copy(da->st_rbf.addr[da->st_rbf.t_rb].h_src, hdr->addr2);
++
++	/* ether_addr_copy() gives a false warning on gcc-10 so use memcpy()
++	 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=97490
++	 */
++	memcpy(da->st_rbf.addr[da->st_rbf.t_rb].h_dest, hdr->addr1, ETH_ALEN);
++	memcpy(da->st_rbf.addr[da->st_rbf.t_rb].h_src, hdr->addr2, ETH_ALEN);
+ 
+ 	if (!(info->status.rates[ridx].flags & IEEE80211_TX_RC_MCS)) {
+ 		const struct ieee80211_rate *rate;
+-- 
+2.25.1
+

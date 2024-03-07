@@ -1,0 +1,43 @@
+From a7f3de09344dbfa037f8a629e479eff803e943ed Mon Sep 17 00:00:00 2001
+From: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Date: Wed, 4 Nov 2020 10:18:22 +0400
+Subject: [PATCH 017/166] mac80211: assure that certain drivers adhere to
+ DONT_REORDER flag
+
+Some drivers use skb->priority to determine on which queue to send
+a frame. An example is mt76x2u (this was tested on an AWUS036ACM).
+This means these drivers currently do not adhere to the DONT_REORDER
+flag. To fix this, we do not set skb->priority based on the QoS TID
+of injected frames when the DONT_REORDER flag is set.
+
+Signed-off-by: Mathy Vanhoef <Mathy.Vanhoef@kuleuven.be>
+Link: https://lore.kernel.org/r/20201104061823.197407-5-Mathy.Vanhoef@kuleuven.be
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit 70c5e40ca959ad48e932a343116a76dd78859e5e)
+---
+ net/mac80211/tx.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 2e751ed60405..88b9c89c8981 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2282,8 +2282,13 @@ netdev_tx_t ieee80211_monitor_start_xmit(struct sk_buff *skb,
+ 						    payload[7]);
+ 	}
+ 
+-	/* Initialize skb->priority for QoS frames */
+-	if (ieee80211_is_data_qos(hdr->frame_control)) {
++	/* Initialize skb->priority for QoS frames. If the DONT_REORDER flag
++	 * is set, stick to the default value for skb->priority to assure
++	 * frames injected with this flag are not reordered relative to each
++	 * other.
++	 */
++	if (ieee80211_is_data_qos(hdr->frame_control) &&
++	    !(info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER)) {
+ 		u8 *p = ieee80211_get_qos_ctl(hdr);
+ 		skb->priority = *p & IEEE80211_QOS_CTL_TAG1D_MASK;
+ 	}
+-- 
+2.25.1
+

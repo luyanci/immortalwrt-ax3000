@@ -1,0 +1,136 @@
+From 50158ab53f6ec904a195e3a9bdb067b86cbfe489 Mon Sep 17 00:00:00 2001
+From: Ritesh Singh <ritesi@codeaurora.org>
+Date: Tue, 24 Nov 2020 17:59:14 +0200
+Subject: [PATCH 064/166] ath11k: remove "ath11k_mac_get_ar_vdev_stop_status"
+ references
+
+Unused structure ath11k_vdev_stop_status is removed.
+'ath11k_mac_get_ar_vdev_stop_status' api has been replaced
+with 'ath11k_mac_get_ar_by_vdev_id' inside vdev_stopped_event.
+
+Signed-off-by: Ritesh Singh <ritesi@codeaurora.org>
+Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1605514143-17652-4-git-send-email-mkenna@codeaurora.org
+(cherry picked from commit fae0385b29679a13523b3d14f570f0fdc46cd48d)
+---
+ drivers/net/wireless/ath/ath11k/core.h |  6 -----
+ drivers/net/wireless/ath/ath11k/mac.c  | 36 --------------------------
+ drivers/net/wireless/ath/ath11k/mac.h  |  2 --
+ drivers/net/wireless/ath/ath11k/wmi.c  |  2 +-
+ 4 files changed, 1 insertion(+), 45 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 88e5a9b9f52d..3a71180ffe5a 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -432,11 +432,6 @@ struct ath11k_per_peer_tx_stats {
+ #define ATH11K_FLUSH_TIMEOUT (5 * HZ)
+ #define ATH11K_VDEV_DELETE_TIMEOUT_HZ (5 * HZ)
+ 
+-struct ath11k_vdev_stop_status {
+-	bool stop_in_progress;
+-	u32  vdev_id;
+-};
+-
+ struct ath11k {
+ 	struct ath11k_base *ab;
+ 	struct ath11k_pdev *pdev;
+@@ -512,7 +507,6 @@ struct ath11k {
+ 	struct completion install_key_done;
+ 
+ 	int last_wmi_vdev_start_status;
+-	struct ath11k_vdev_stop_status vdev_stop_status;
+ 	struct completion vdev_setup_done;
+ 	struct completion vdev_delete_done;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index f97d22d7f923..c68fa8eebe33 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -537,31 +537,6 @@ struct ath11k *ath11k_mac_get_ar_by_pdev_id(struct ath11k_base *ab, u32 pdev_id)
+ 	return NULL;
+ }
+ 
+-struct ath11k *ath11k_mac_get_ar_vdev_stop_status(struct ath11k_base *ab,
+-						  u32 vdev_id)
+-{
+-	int i;
+-	struct ath11k_pdev *pdev;
+-	struct ath11k *ar;
+-
+-	for (i = 0; i < ab->num_radios; i++) {
+-		pdev = rcu_dereference(ab->pdevs_active[i]);
+-		if (pdev && pdev->ar) {
+-			ar = pdev->ar;
+-
+-			spin_lock_bh(&ar->data_lock);
+-			if (ar->vdev_stop_status.stop_in_progress &&
+-			    ar->vdev_stop_status.vdev_id == vdev_id) {
+-				ar->vdev_stop_status.stop_in_progress = false;
+-				spin_unlock_bh(&ar->data_lock);
+-				return ar;
+-			}
+-			spin_unlock_bh(&ar->data_lock);
+-		}
+-	}
+-	return NULL;
+-}
+-
+ static void ath11k_pdev_caps_update(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -5020,13 +4995,6 @@ static int ath11k_mac_vdev_stop(struct ath11k_vif *arvif)
+ 
+ 	reinit_completion(&ar->vdev_setup_done);
+ 
+-	spin_lock_bh(&ar->data_lock);
+-
+-	ar->vdev_stop_status.stop_in_progress = true;
+-	ar->vdev_stop_status.vdev_id = arvif->vdev_id;
+-
+-	spin_unlock_bh(&ar->data_lock);
+-
+ 	ret = ath11k_wmi_vdev_stop(ar, arvif->vdev_id);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to stop WMI vdev %i: %d\n",
+@@ -5055,10 +5023,6 @@ static int ath11k_mac_vdev_stop(struct ath11k_vif *arvif)
+ 
+ 	return 0;
+ err:
+-	spin_lock_bh(&ar->data_lock);
+-	ar->vdev_stop_status.stop_in_progress = false;
+-	spin_unlock_bh(&ar->data_lock);
+-
+ 	return ret;
+ }
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/mac.h b/drivers/net/wireless/ath/ath11k/mac.h
+index 0607479774a9..597104a9078d 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -137,8 +137,6 @@ struct ath11k_vif *ath11k_mac_get_arvif_by_vdev_id(struct ath11k_base *ab,
+ 						   u32 vdev_id);
+ struct ath11k *ath11k_mac_get_ar_by_vdev_id(struct ath11k_base *ab, u32 vdev_id);
+ struct ath11k *ath11k_mac_get_ar_by_pdev_id(struct ath11k_base *ab, u32 pdev_id);
+-struct ath11k *ath11k_mac_get_ar_vdev_stop_status(struct ath11k_base *ab,
+-						  u32 vdev_id);
+ 
+ void ath11k_mac_drain_tx(struct ath11k *ar);
+ void ath11k_mac_peer_cleanup_all(struct ath11k *ar);
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index e374270b6937..f6f726979710 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5856,7 +5856,7 @@ static void ath11k_vdev_stopped_event(struct ath11k_base *ab, struct sk_buff *sk
+ 	}
+ 
+ 	rcu_read_lock();
+-	ar = ath11k_mac_get_ar_vdev_stop_status(ab, vdev_id);
++	ar = ath11k_mac_get_ar_by_vdev_id(ab, vdev_id);
+ 	if (!ar) {
+ 		ath11k_warn(ab, "invalid vdev id in vdev stopped ev %d",
+ 			    vdev_id);
+-- 
+2.25.1
+

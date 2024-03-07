@@ -1,0 +1,35 @@
+From 907d642eb76629f312d791b3705f25e40538652c Mon Sep 17 00:00:00 2001
+From: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Date: Tue, 24 Nov 2020 17:59:19 +0200
+Subject: [PATCH 073/166] wcn36xx: Send NULL data packet when exiting BMPS
+
+This commit updates the BMPS exit path to be consistent with downstream in
+terms of exiting BMPS mode. Downstream sets the flag to send a NULL data
+frame to the host on exiting BMPS.
+
+This will tell the AP to send any queued frames to the STA immediately.
+Verified the relevant bit toggle in wireshark.
+
+Signed-off-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201120021403.2646574-2-bryan.odonoghue@linaro.org
+(cherry picked from commit 9bc3a55f4ae5c1c32b4b0b028b423833f1565c62)
+---
+ drivers/net/wireless/ath/wcn36xx/smd.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/wcn36xx/smd.c b/drivers/net/wireless/ath/wcn36xx/smd.c
+index 8ff1eda8f942..acf533fae46a 100644
+--- a/drivers/net/wireless/ath/wcn36xx/smd.c
++++ b/drivers/net/wireless/ath/wcn36xx/smd.c
+@@ -2176,6 +2176,7 @@ int wcn36xx_smd_exit_bmps(struct wcn36xx *wcn, struct ieee80211_vif *vif)
+ 	INIT_HAL_MSG(msg_body, WCN36XX_HAL_EXIT_BMPS_REQ);
+ 
+ 	msg_body.bss_index = vif_priv->bss_index;
++	msg_body.send_data_null = 1;
+ 
+ 	PREPARE_HAL_BUF(wcn->hal_buf, msg_body);
+ 
+-- 
+2.25.1
+

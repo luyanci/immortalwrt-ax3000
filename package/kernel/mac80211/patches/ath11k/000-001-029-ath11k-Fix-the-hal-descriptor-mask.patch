@@ -1,0 +1,61 @@
+From bf5c5d887ff4c564898d9140b7c1cc2767015f81 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Wed, 4 Nov 2020 23:15:21 +0530
+Subject: [PATCH 029/166] ath11k: Fix the hal descriptor mask
+
+Below listed hal descriptor mask are incorrect, so modify it to correct one
+ - CE destination status description meta info mask is increased from
+   8 bits to 16 bits from the 0th bit position
+ - Rx Reo queue duplicate count mask is decreased from 22 bits to 16 bits
+ - Reo threshold status counter sum mask is increased from 24 bits to 26 bits
+
+No functionality impact, these descriptors are currently not used in any
+supported platform. But in future if someone referred these descriptor then
+ended with wrong values.
+
+Found this during code review.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.1.0.1-01238-QCAHKSWPL_SILICONZ-2
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604511921-24840-1-git-send-email-periyasa@codeaurora.org
+(cherry picked from commit ab041d060ee655be528fa4ee6ee8f8c3f52a7056)
+---
+ drivers/net/wireless/ath/ath11k/hal_desc.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hal_desc.h b/drivers/net/wireless/ath/ath11k/hal_desc.h
+index ceebdc28ddeb..1b713cb13b90 100644
+--- a/drivers/net/wireless/ath/ath11k/hal_desc.h
++++ b/drivers/net/wireless/ath/ath11k/hal_desc.h
+@@ -1425,7 +1425,7 @@ struct hal_ce_srng_dest_desc {
+ #define HAL_CE_DST_STATUS_DESC_FLAGS_GATHER		BIT(11)
+ #define HAL_CE_DST_STATUS_DESC_FLAGS_LEN		GENMASK(31, 16)
+ 
+-#define HAL_CE_DST_STATUS_DESC_META_INFO_DATA		GENMASK(7, 0)
++#define HAL_CE_DST_STATUS_DESC_META_INFO_DATA		GENMASK(15, 0)
+ #define HAL_CE_DST_STATUS_DESC_META_INFO_RING_ID	GENMASK(27, 20)
+ #define HAL_CE_DST_STATUS_DESC_META_INFO_LOOP_CNT	HAL_SRNG_DESC_LOOP_CNT
+ 
+@@ -1946,7 +1946,7 @@ enum hal_rx_reo_queue_pn_size {
+ 
+ #define HAL_RX_REO_QUEUE_INFO3_TIMEOUT_COUNT		GENMASK(9, 4)
+ #define HAL_RX_REO_QUEUE_INFO3_FWD_DUE_TO_BAR_CNT	GENMASK(15, 10)
+-#define HAL_RX_REO_QUEUE_INFO3_DUPLICATE_COUNT		GENMASK(31, 10)
++#define HAL_RX_REO_QUEUE_INFO3_DUPLICATE_COUNT		GENMASK(31, 16)
+ 
+ #define HAL_RX_REO_QUEUE_INFO4_FRAME_IN_ORD_COUNT	GENMASK(23, 0)
+ #define HAL_RX_REO_QUEUE_INFO4_BAR_RECVD_COUNT		GENMASK(31, 24)
+@@ -2432,7 +2432,7 @@ struct hal_reo_flush_timeout_list_status {
+ #define HAL_REO_DESC_THRESH_STATUS_INFO1_LINK_DESC_COUNTER0	GENMASK(23, 0)
+ #define HAL_REO_DESC_THRESH_STATUS_INFO2_LINK_DESC_COUNTER1	GENMASK(23, 0)
+ #define HAL_REO_DESC_THRESH_STATUS_INFO3_LINK_DESC_COUNTER2	GENMASK(23, 0)
+-#define HAL_REO_DESC_THRESH_STATUS_INFO4_LINK_DESC_COUNTER_SUM	GENMASK(23, 0)
++#define HAL_REO_DESC_THRESH_STATUS_INFO4_LINK_DESC_COUNTER_SUM	GENMASK(25, 0)
+ 
+ struct hal_reo_desc_thresh_reached_status {
+ 	struct hal_reo_status_hdr hdr;
+-- 
+2.25.1
+

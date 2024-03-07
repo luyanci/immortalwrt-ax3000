@@ -1,0 +1,67 @@
+From a6a2ae86255b1e4f37764819f62371b571d4eaf5 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Mon, 9 Nov 2020 15:11:55 +0530
+Subject: [PATCH 057/166] ath11k: add processor_id based ring_selector logic
+
+Current ring selector logic follows round-robin scheduling,
+when a process switch from one processor to another each time,
+the data in the cache would have to be invalidated
+and re-loaded from RAM leads to poor cache utilization.
+
+Therefore smp_processor_id() attempt to keep processes
+on the same processor via processor affinity which improves
+cache utilization. Also, ring selection could be chosen round
+robin when the processor_id based ring selection does not
+have the resources.
+
+Tested-on : IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00874-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1604914915-12831-1-git-send-email-ppranees@codeaurora.org
+(cherry picked from commit 0eaa4c1d34c5635e293b7068ae170152ce0d60ff)
+---
+ drivers/net/wireless/ath/ath11k/core.h  | 3 ---
+ drivers/net/wireless/ath/ath11k/dp_tx.c | 8 ++++----
+ 2 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 79224ed703db..8851cf80ac96 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -728,9 +728,6 @@ struct ath11k_base {
+ 	} stats;
+ 	u32 pktlog_defs_checksum;
+ 
+-	/* Round robbin based TCL ring selector */
+-	atomic_t tcl_ring_selector;
+-
+ 	struct ath11k_dbring_cap *db_caps;
+ 	u32 num_db_cap;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/dp_tx.c b/drivers/net/wireless/ath/ath11k/dp_tx.c
+index 3d962eee4d61..6ea65533a119 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -105,14 +105,14 @@ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 
+ 	pool_id = skb_get_queue_mapping(skb) & (ATH11K_HW_MAX_QUEUES - 1);
+ 
+-	/* Let the default ring selection be based on a round robin
+-	 * fashion where one of the 3 tcl rings are selected based on
+-	 * the tcl_ring_selector counter. In case that ring
++	/* Let the default ring selection be based on current processor
++	 * number, where one of the 3 tcl rings are selected based on
++	 * the smp_processor_id(). In case that ring
+ 	 * is full/busy, we resort to other available rings.
+ 	 * If all rings are full, we drop the packet.
+ 	 * //TODO Add throttling logic when all rings are full
+ 	 */
+-	ring_selector = atomic_inc_return(&ab->tcl_ring_selector);
++	ring_selector = smp_processor_id();
+ 
+ tcl_ring_sel:
+ 	tcl_ring_retry = false;
+-- 
+2.25.1
+

@@ -1,0 +1,33 @@
+From 0a93a83848677c7469104d8294f69204a3fc0903 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 6 Dec 2020 14:54:41 +0200
+Subject: [PATCH 109/166] mac80211: use struct assignment for he_obss_pd
+
+Use a struct assignment here, which is clearer than the
+memcpy() and type-safe as well.
+
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20201206145305.2ab3aad7d5fc.Iaca4ee6db651b7de17e4351f4be7973ff8600186@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+(cherry picked from commit a5a55032ea654e5fdd9255035bb5066c87d7b95e)
+---
+ net/mac80211/cfg.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+index 1344ce27353d..e0f4662b3abf 100644
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1122,8 +1122,7 @@ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
+ 	sdata->vif.bss_conf.enable_beacon = true;
+ 	sdata->vif.bss_conf.allow_p2p_go_ps = sdata->vif.p2p;
+ 	sdata->vif.bss_conf.twt_responder = params->twt_responder;
+-	memcpy(&sdata->vif.bss_conf.he_obss_pd, &params->he_obss_pd,
+-	       sizeof(struct ieee80211_he_obss_pd));
++	sdata->vif.bss_conf.he_obss_pd = params->he_obss_pd;
+ 	sdata->vif.bss_conf.he_bss_color = params->he_bss_color;
+ 	sdata->vif.bss_conf.s1g = params->chandef.chan->band ==
+ 				  NL80211_BAND_S1GHZ;
+-- 
+2.25.1
+

@@ -1,0 +1,56 @@
+From cd98787c98bba99a4b427152f0f3d3d7359e23c4 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:23:42 +0000
+Subject: [PATCH 038/166] ath9k: ar9003_2p2_initvals: Remove unused const
+ variables
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h:1734:18: warning: ‘ar9300PciePhy_clkreq_disable_L1_2p2’ defined but not used [-Wunused-const-variable=]
+ drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h:1727:18: warning: ‘ar9300PciePhy_clkreq_enable_L1_2p2’ defined but not used [-Wunused-const-variable=]
+
+Cc: QCA ath9k Development <ath9k-devel@qca.qualcomm.com>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-14-lee.jones@linaro.org
+(cherry picked from commit b5cafcb16f458f989e47448770d59384b879d19e)
+---
+ .../net/wireless/ath/ath9k/ar9003_2p2_initvals.h   | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h b/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
+index c07866a2fdf9..16d5c0c5e2a8 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
+@@ -1724,20 +1724,6 @@ static const u32 ar9300PciePhy_pll_on_clkreq_disable_L1_2p2[][2] = {
+ 	{0x00004044, 0x00000000},
+ };
+ 
+-static const u32 ar9300PciePhy_clkreq_enable_L1_2p2[][2] = {
+-	/* Addr      allmodes  */
+-	{0x00004040, 0x0825365e},
+-	{0x00004040, 0x0008003b},
+-	{0x00004044, 0x00000000},
+-};
+-
+-static const u32 ar9300PciePhy_clkreq_disable_L1_2p2[][2] = {
+-	/* Addr      allmodes  */
+-	{0x00004040, 0x0821365e},
+-	{0x00004040, 0x0008003b},
+-	{0x00004044, 0x00000000},
+-};
+-
+ static const u32 ar9300_2p2_baseband_core_txfir_coeff_japan_2484[][2] = {
+ 	/* Addr      allmodes  */
+ 	{0x0000a398, 0x00000000},
+-- 
+2.25.1
+

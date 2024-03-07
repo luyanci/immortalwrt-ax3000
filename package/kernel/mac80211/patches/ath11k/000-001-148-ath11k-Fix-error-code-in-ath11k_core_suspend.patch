@@ -1,0 +1,36 @@
+From cd3bb13583d895a2a377232d6b3f2f7c55430631 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Wed, 16 Dec 2020 11:31:19 +0300
+Subject: [PATCH 148/166] ath11k: Fix error code in ath11k_core_suspend()
+
+The "if (!ret)" condition is inverted and it should be "if (ret)".  It means
+that we return success when we had intended to return an error code. This also
+caused a spurious warning even when the suspend was successful:
+
+[  297.186612] ath11k_pci 0000:06:00.0: failed to suspend hif: 0
+
+Fixes: d1b0c33850d2 ("ath11k: implement suspend for QCA6390 PCI devices")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/X9nF17L2/EKOSbn/@mwanda
+(cherry picked from commit 9b09456258ea2f35fc8a99c4ac4829dcba0ca4be)
+---
+ drivers/net/wireless/ath/ath11k/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index b97c38b9a270..350b7913622c 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -185,7 +185,7 @@ int ath11k_core_suspend(struct ath11k_base *ab)
+ 	ath11k_hif_ce_irq_disable(ab);
+ 
+ 	ret = ath11k_hif_suspend(ab);
+-	if (!ret) {
++	if (ret) {
+ 		ath11k_warn(ab, "failed to suspend hif: %d\n", ret);
+ 		return ret;
+ 	}
+-- 
+2.25.1
+

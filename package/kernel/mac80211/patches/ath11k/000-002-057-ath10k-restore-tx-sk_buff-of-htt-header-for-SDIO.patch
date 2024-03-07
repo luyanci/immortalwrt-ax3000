@@ -1,0 +1,59 @@
+From aa90722651aa03ecc0339c6631b45205c91e3527 Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Wed, 10 Feb 2021 09:53:24 +0200
+Subject: [PATCH 57/93] ath10k: restore tx sk_buff of htt header for SDIO
+
+ieee80211_report_used_skb of mac80211 use the frame_control of
+ieee80211_hdr in sk_buff and indicate it to another function
+ieee80211_mgd_conn_tx_status, then it queue work ieee80211_sta_work,
+but ieee80211_is_auth(fc) in ieee80211_sta_work check fail when the
+authentication has transmitted by ath10k.
+
+When the ath10k report it with HTT_TX_COMPL_STATE_DISCARD, it will be
+set without flag IEEE80211_TX_STAT_ACK, then mac80211 should try the
+next authentication immeditely, but in fact mac80211 wait 1 second for
+it, the reason is ieee80211_is_auth(fc) in ieee80211_sta_work check
+fail for the sk_buff which is not restored, the data of sk_buff is not
+the begin of ieee80211_hdr, in fact it is the begin of htt_cmd_hdr.
+
+dmesg without this patch, it wait 1 second for the next retry when
+ath10k report without IEEE80211_TX_STAT_ACK for authentication:
+[ 6973.883116] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 1/3)
+[ 6974.705471] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 2/3)
+[ 6975.712962] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 3/3)
+
+Restore the sk_buff make mac8011 retry the next authentication
+immeditely which meet logic of mac80211.
+
+dmesg with this patch, it retry the next immeditely when ath10k
+report without IEEE80211_TX_STAT_ACK for authentication:
+[  216.734813] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 1/3)
+[  216.739914] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 2/3)
+[  216.745874] wlan0: send auth to 5e:6f:2b:0d:fb:d7 (try 3/3)
+
+Tested-on: QCA6174 hw3.2 SDIO WLAN.RMH.4.4.1-00049
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1612839530-2263-1-git-send-email-wgong@codeaurora.org
+(cherry picked from commit e6f1c0d26a31a09e83d8aa7ed1a1c796bf2685c8)
+---
+ drivers/net/wireless/ath/ath10k/htt_tx.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/htt_tx.c b/drivers/net/wireless/ath/ath10k/htt_tx.c
+index 77f4d27e9d07..d6b8bdcef416 100644
+--- a/drivers/net/wireless/ath/ath10k/htt_tx.c
++++ b/drivers/net/wireless/ath/ath10k/htt_tx.c
+@@ -569,6 +569,8 @@ void ath10k_htt_htc_tx_complete(struct ath10k *ar, struct sk_buff *skb)
+ 			desc_hdr = (struct htt_data_tx_desc *)
+ 				(skb->data + sizeof(*htt_hdr));
+ 			flags1 = __le16_to_cpu(desc_hdr->flags1);
++			skb_pull(skb, sizeof(struct htt_cmd_hdr));
++			skb_pull(skb, sizeof(struct htt_data_tx_desc));
+ 		}
+ 	}
+ 
+-- 
+2.25.1
+

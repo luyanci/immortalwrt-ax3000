@@ -1,0 +1,63 @@
+From 18cc9b939f3894a22453e3fc92329d0fad14b7a8 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Tue, 20 Oct 2020 11:31:11 -0700
+Subject: [PATCH 088/166] ath11k: mesh: add support for 256 bitmap in blockack
+ frames in 11ax
+
+Currently 256 bitmap in blockack frames is being set only for AP mode.
+Fix this to set whenever beacon has changed and has HE capability, there
+by supporting mesh as well.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.1.0.1-01228-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201020183111.25458-5-pradeepc@codeaurora.org
+(cherry picked from commit 743b9065fe6348a5f8f5ce04869ce2d701e5e1bc)
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index e8b0b66d34e4..d08afa111647 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1925,20 +1925,6 @@ static void ath11k_mac_op_bss_info_changed(struct ieee80211_hw *hw,
+ 		if (ret)
+ 			ath11k_warn(ar->ab, "failed to update bcn template: %d\n",
+ 				    ret);
+-
+-		if (vif->bss_conf.he_support) {
+-			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-							    WMI_VDEV_PARAM_BA_MODE,
+-							    WMI_BA_MODE_BUFFER_SIZE_256);
+-			if (ret)
+-				ath11k_warn(ar->ab,
+-					    "failed to set BA BUFFER SIZE 256 for vdev: %d\n",
+-					    arvif->vdev_id);
+-			else
+-				ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+-					   "Set BA BUFFER SIZE 256 for VDEV: %d\n",
+-					   arvif->vdev_id);
+-		}
+ 	}
+ 
+ 	if (changed & (BSS_CHANGED_BEACON_INFO | BSS_CHANGED_BEACON)) {
+@@ -1974,6 +1960,14 @@ static void ath11k_mac_op_bss_info_changed(struct ieee80211_hw *hw,
+ 
+ 		if (arvif->is_up && vif->bss_conf.he_support &&
+ 		    vif->bss_conf.he_oper.params) {
++			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++							    WMI_VDEV_PARAM_BA_MODE,
++							    WMI_BA_MODE_BUFFER_SIZE_256);
++			if (ret)
++				ath11k_warn(ar->ab,
++					    "failed to set BA BUFFER SIZE 256 for vdev: %d\n",
++					    arvif->vdev_id);
++
+ 			param_id = WMI_VDEV_PARAM_HEOPS_0_31;
+ 			param_value = vif->bss_conf.he_oper.params;
+ 			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-- 
+2.25.1
+

@@ -1,0 +1,46 @@
+From 3c6be30146af8d5514806f58074bc12f552d2402 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 2 Nov 2020 11:23:39 +0000
+Subject: [PATCH 035/166] ath9k: ar9330_1p1_initvals: Remove unused const
+ variable 'ar9331_common_tx_gain_offset1_1'
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h:1013:18: warning: ‘ar9331_common_tx_gain_offset1_1’ defined but not used [-Wunused-const-variable=]
+
+Cc: QCA ath9k Development <ath9k-devel@qca.qualcomm.com>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201102112410.1049272-11-lee.jones@linaro.org
+(cherry picked from commit 3fc95aacc6fa62a623ae727fe631c03180efc206)
+---
+ drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h b/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h
+index 29479afbc4f1..3e783fc13553 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h
+@@ -1010,11 +1010,4 @@ static const u32 ar9331_common_rx_gain_1p1[][2] = {
+ 	{0x0000a1fc, 0x00000296},
+ };
+ 
+-static const u32 ar9331_common_tx_gain_offset1_1[][1] = {
+-	{0x00000000},
+-	{0x00000003},
+-	{0x00000000},
+-	{0x00000000},
+-};
+-
+ #endif /* INITVALS_9330_1P1_H */
+-- 
+2.25.1
+
