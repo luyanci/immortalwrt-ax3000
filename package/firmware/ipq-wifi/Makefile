@@ -52,7 +52,8 @@ ALLWIFIBOARDS:= \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
 	qxwlan_e2600ac \
-	redmi_ax3000
+	redmi_ax3000 \
+	xiaomi_cr881x
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -145,5 +146,6 @@ $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
 $(eval $(call generate-ipq-wifi-package,redmi_ax3000,Redmi AX3000))
+$(eval $(call generate-ipq-wifi-package,xiaomi_cr881x,Xiaomi CR881x))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
