@@ -1,0 +1,53 @@
+From 85f91ed2f56831d855f3f262e7bc5de43d7d31cc Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 14 Jul 2024 17:50:15 +0800
+Subject: [PATCH 1/1] net: phy: add more mode
+
+---
+ include/linux/phy.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 95af31f7..f46bff71 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -62,6 +62,7 @@
+ /* Interface Mode definitions */
+ typedef enum {
+ 	PHY_INTERFACE_MODE_NA,
++	PHY_INTERFACE_MODE_INTERNAL,
+ 	PHY_INTERFACE_MODE_MII,
+ 	PHY_INTERFACE_MODE_GMII,
+ 	PHY_INTERFACE_MODE_SGMII,
+@@ -77,6 +78,8 @@ typedef enum {
+ 	PHY_INTERFACE_MODE_XGMII,
+ 	PHY_INTERFACE_MODE_MOCA,
+ 	PHY_INTERFACE_MODE_QSGMII,
++	PHY_INTERFACE_MODE_1000BASEX,
++	PHY_INTERFACE_MODE_2500BASEX,
+ 	PHY_INTERFACE_MODE_MAX,
+ } phy_interface_t;
+ 
+@@ -90,6 +93,8 @@ static inline const char *phy_modes(phy_interface_t interface)
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_NA:
+ 		return "";
++	case PHY_INTERFACE_MODE_INTERNAL:
++		return "internal";
+ 	case PHY_INTERFACE_MODE_MII:
+ 		return "mii";
+ 	case PHY_INTERFACE_MODE_GMII:
+@@ -120,6 +125,10 @@ static inline const char *phy_modes(phy_interface_t interface)
+ 		return "moca";
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 		return "qsgmii";
++	case PHY_INTERFACE_MODE_1000BASEX:
++		return "1000base-x";
++	case PHY_INTERFACE_MODE_2500BASEX:
++		return "2500base-x";
+ 	default:
+ 		return "unknown";
+ 	}
+-- 
+2.40.1
+

@@ -1,0 +1,40 @@
+From d707ce61805e4b7ea5ae02f6c2c5d8369c4cb0b5 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 14 Jul 2024 17:56:54 +0800
+Subject: [PATCH 1/1] net: phy: add motorcomm yt9215 supports
+
+---
+ drivers/net/phy/Kconfig  | 4 ++++
+ drivers/net/phy/Makefile | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 2a1bcabd..00bd256e 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -349,6 +349,10 @@ config PSB6970_PHY
+ 	select SWCONFIG
+ 	select ETHERNET_PACKET_MANGLE
+ 
++config YT9215_PHY
++	tristate "Motorcomm YT9215 switch"
++	select SWCONFIG
++
+ config MDIO_QCA
+ 	tristate "Qualcomm Atheros ipq MDIO interface"
+ 	help
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 37615c08..83917117 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+ obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
+ obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
+ obj-$(CONFIG_PSB6970_PHY)	+= psb6970.o
++obj-$(CONFIG_YT9215_PHY)	+= yt9215.o
+ obj-$(CONFIG_B53)		+= b53/
+ obj-$(CONFIG_QCA_85XX_SWITCH)	+= qca_85xx/
+ obj-$(CONFIG_FIXED_PHY)		+= fixed_phy.o
+-- 
+2.40.1
+
