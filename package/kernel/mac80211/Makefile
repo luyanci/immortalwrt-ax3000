@@ -23,6 +23,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_DRIVERS = \
 	adm8211 \
+	airo \
 	hermes hermes-pci hermes-pcmcia hermes-plx\
 	lib80211 \
 	mac80211-hwsim \
@@ -38,6 +39,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
 	CONFIG_PACKAGE_MAC80211_TRACING \
+	CONFIG_PACKAGE_MAC80211_NSS_SUPPORT \
 	CONFIG_PACKAGE_IWLWIFI_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUGFS \
 	CONFIG_PACKAGE_RTLWIFI_DEBUG \
@@ -83,6 +85,7 @@ config-$(CONFIG_PACKAGE_CFG80211_TESTMODE) += NL80211_TESTMODE
 
 config-$(call config_package,mac80211) += MAC80211
 config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
+congig-$(CONFIG_PACKAGE_MAC80211_NSS_SUPPORT) += MAC80211_NSS_SUPPORT
 
 include ath.mk
 include broadcom.mk
@@ -126,7 +129,8 @@ define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
   # +kmod-crypto-cmac is a runtime only dependency of net/mac80211/aes_cmac.c
-  DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common
+  DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common \
+	+PACKAGE_MAC80211_NSS_SUPPORT:kmod-qca-nss-drv
   KCONFIG:=\
 	CONFIG_AVERAGE=y
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
@@ -157,6 +161,14 @@ define KernelPackage/mac80211/config
 	config PACKAGE_MAC80211_MESH
 		bool "Enable 802.11s mesh support"
 		default y
+
+	# Move out to avoid recursive dependency in Kconfig
+	config PACKAGE_MAC80211_NSS_SUPPORT
+		bool "Enable NSS support"
+		depends on TARGET_ipq50xx
+		depends on ATH11K_NSS_SUPPORT
+		help
+		  Enables NSS offload support for ATH11K driver
 
   endif
 endef
@@ -424,6 +436,16 @@ C_DEFINES=
 
 ifeq ($(BUILD_VARIANT),smallbuffers)
 	C_DEFINES+= -DCONFIG_ATH10K_SMALLBUFFERS
+endif
+
+ifneq ($(CONFIG_PACKAGE_MAC80211_NSS_SUPPORT),)
+	C_DEFINES+= \
+		-I$(STAGING_DIR)/usr/include/qca-nss-drv
+endif
+
+ifneq ($(CONFIG_ATH11K_NSS_SUPPORT),)
+	C_DEFINES+= \
+		-I$(STAGING_DIR)/usr/include/qca-nss-clients
 endif
 
 MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
