@@ -54,6 +54,7 @@
 		clock-names = "ext_clock";
 		pinctrl-names = "default";
 		pinctrl-0 = <&wifi_enable_h &clk32k_out1>;
+		post-power-on-delay-ms = <200>;
 		reset-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_LOW>;
 	};
 
@@ -136,6 +137,7 @@
 		regulator-name = "vcc3v3_pi6c";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
+		startup-delay-us = <200000>;
 		vin-supply = <&vcc_syson>;
 	};
 
@@ -147,6 +149,7 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
+		startup-delay-us = <50000>;
 		vin-supply = <&vcc3v3_pi6c>;
 	};
 
@@ -267,6 +270,7 @@
 &gmac0 {
 	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>;
 	assigned-clock-parents = <&gmac0_xpcsclk>;
+	label = "eth1";
 	power-domains = <&power RK3568_PD_PIPE>;
 	phys = <&combphy2 PHY_TYPE_SGMII>;
 	phy-handle = <&sgmii_phy>;
@@ -288,6 +292,7 @@
 	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
 	assigned-clock-rates = <0>, <125000000>;
 	clock_in_out = "output";
+	label = "eth0";
 	phy-handle = <&rgmii_phy>;
 	phy-mode = "rgmii";
 	phy-supply = <&vcc_3v3>;
@@ -386,6 +391,10 @@
 };
 
 &pcie3x2 {
+	max-link-speed = <1>;
+	num-lanes = <1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie30x1m0_pins>;
 	reset-gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_pcie>;
 	status = "okay";
@@ -454,7 +463,9 @@
 
 &sdhci {
 	bus-width = <8>;
-	max-frequency = <200000000>;
+	cap-mmc-highspeed;
+	max-frequency = <150000000>;
+	mmc-hs200-1_8v;
 	non-removable;
 	pinctrl-names = "default";
 	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd>;
@@ -487,7 +498,6 @@
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_clk &sdmmc1_cmd>;
 	sd-uhs-sdr25;
 	sd-uhs-sdr50;
-	sd-uhs-sdr104;
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	#address-cells = <1>;
@@ -534,6 +544,7 @@
 };
 
 &uart4 {
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 

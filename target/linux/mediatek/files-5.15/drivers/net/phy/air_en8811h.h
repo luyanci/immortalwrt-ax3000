@@ -69,6 +69,7 @@
 #define LED_BLK_EVT_1000M_TX_ACT    (1 << 0)
 /* LED Blinking Event Option.E*/
 #define EN8811H_LED_COUNT           3
+#define EN8811H_LED_SIZE            (EN8811H_LED_COUNT * 5)
 
 #define LED_BCR                     (0x021)
 #define LED_BCR_EXT_CTRL            (1 << 15)
@@ -90,6 +91,14 @@
 #define INVALID_DATA                0xffff
 #define PBUS_INVALID_DATA           0xffffffff
 
+struct air_base_t_led_cfg {
+	u32 en;
+	u32 gpio;
+	u32 pol;
+	u32 on_cfg;
+	u32 blk_cfg;
+};
+
 struct en8811h_priv {
 	struct dentry       *debugfs_root;
 	unsigned int        dm_crc32;
@@ -97,15 +106,10 @@ struct en8811h_priv {
 	char                buf[512];
 	int                 pol;
 	int                 surge;
+	bool                led_cfg_valid;
+	struct air_base_t_led_cfg led_cfg[EN8811H_LED_COUNT];
 };
 
-struct air_base_t_led_cfg {
-	u16 en;
-	u16 gpio;
-	u16 pol;
-	u16 on_cfg;
-	u16 blk_cfg;
-};
 enum air_led_gpio {
 	AIR_LED2_GPIO3 = 3,
 	AIR_LED1_GPIO4,

@@ -170,6 +170,9 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&en8811_pwr_a>;
 
+			airoha,led-cfg = <1 5 1 0x0    0xc3f>,
+					 <1 4 1 0xc107 0x0>,
+					 <0 3 1 0x0    0x0>;
 			airoha,polarity = <3>;
 
 			interrupt-parent = <&pio>;
@@ -189,6 +192,9 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&en8811_pwr_b>;
 
+			airoha,led-cfg = <1 5 1 0x0    0xc3f>,
+					 <1 4 1 0xc107 0x0>,
+					 <0 3 1 0x0    0x0>;
 			airoha,polarity = <3>;
 
 			interrupt-parent = <&pio>;

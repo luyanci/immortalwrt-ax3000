@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  #ifdef CPTCFG_MAC80211_MESH
-@@ -2009,6 +2024,11 @@ int ieee80211_tx_control_port(struct wip
+@@ -2007,6 +2022,11 @@ int ieee80211_tx_control_port(struct wip
  			      int link_id, u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -262,7 +262,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline
 --- a/net/mac80211/mesh_hwmp.c
 +++ b/net/mac80211/mesh_hwmp.c
-@@ -394,6 +394,7 @@ static u32 hwmp_route_info_get(struct ie
+@@ -400,6 +400,7 @@ static u32 hwmp_route_info_get(struct ie
  	u32 orig_sn, orig_metric;
  	unsigned long orig_lifetime, exp_time;
  	u32 last_hop_metric, new_metric;
@@ -270,7 +270,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool process = true;
  	u8 hopcount;
  
-@@ -491,8 +492,10 @@ static u32 hwmp_route_info_get(struct ie
+@@ -497,8 +498,10 @@ static u32 hwmp_route_info_get(struct ie
  		}
  
  		if (fresh_info) {
@@ -282,7 +282,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			mesh_path_assign_nexthop(mpath, sta);
  			mpath->flags |= MESH_PATH_SN_VALID;
  			mpath->metric = new_metric;
-@@ -502,6 +505,8 @@ static u32 hwmp_route_info_get(struct ie
+@@ -508,6 +511,8 @@ static u32 hwmp_route_info_get(struct ie
  			mpath->hop_count = hopcount;
  			mesh_path_activate(mpath);
  			spin_unlock_bh(&mpath->state_lock);
@@ -291,7 +291,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
  			/* init it at a low value - 0 start is tricky */
  			ewma_mesh_fail_avg_add(&sta->mesh->fail_avg, 1);
-@@ -539,8 +544,10 @@ static u32 hwmp_route_info_get(struct ie
+@@ -545,8 +550,10 @@ static u32 hwmp_route_info_get(struct ie
  		}
  
  		if (fresh_info) {
@@ -303,7 +303,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			mesh_path_assign_nexthop(mpath, sta);
  			mpath->metric = last_hop_metric;
  			mpath->exp_time = time_after(mpath->exp_time, exp_time)
-@@ -548,6 +555,8 @@ static u32 hwmp_route_info_get(struct ie
+@@ -554,6 +561,8 @@ static u32 hwmp_route_info_get(struct ie
  			mpath->hop_count = 1;
  			mesh_path_activate(mpath);
  			spin_unlock_bh(&mpath->state_lock);
@@ -312,7 +312,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
  			/* init it at a low value - 0 start is tricky */
  			ewma_mesh_fail_avg_add(&sta->mesh->fail_avg, 1);
-@@ -1215,6 +1224,20 @@ static int mesh_nexthop_lookup_nolearn(s
+@@ -1223,6 +1232,20 @@ static int mesh_nexthop_lookup_nolearn(s
  	return 0;
  }
  
@@ -333,7 +333,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * mesh_nexthop_lookup - put the appropriate next hop on a mesh frame. Calling
   * this function is considered "using" the associated mpath, so preempt a path
-@@ -1242,19 +1265,15 @@ int mesh_nexthop_lookup(struct ieee80211
+@@ -1250,19 +1273,15 @@ int mesh_nexthop_lookup(struct ieee80211
  	if (!mpath || !(mpath->flags & MESH_PATH_ACTIVE))
  		return -ENOENT;
  
@@ -728,7 +728,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3028,6 +3028,9 @@ void ieee80211_check_fast_xmit(struct st
+@@ -3035,6 +3035,9 @@ void ieee80211_check_fast_xmit(struct st
  	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
  		return;
  
@@ -738,7 +738,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* Locking here protects both the pointer itself, and against concurrent
  	 * invocations winning data access races to, e.g., the key pointer that
  	 * is used.
-@@ -3409,6 +3412,9 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3416,6 +3419,9 @@ static bool ieee80211_amsdu_aggregate(st
  	if (sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
  		return false;
  
@@ -748,7 +748,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (skb_is_gso(skb))
  		return false;
  
-@@ -3641,10 +3647,11 @@ free:
+@@ -3648,10 +3654,11 @@ free:
  	return NULL;
  }
  
@@ -764,7 +764,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3653,7 +3660,6 @@ static void __ieee80211_xmit_fast(struct
+@@ -3660,7 +3667,6 @@ static void __ieee80211_xmit_fast(struct
  	ieee80211_tx_result r;
  	int hw_headroom = sdata->local->hw.extra_tx_headroom;
  	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
@@ -772,7 +772,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	skb = skb_share_check(skb, GFP_ATOMIC);
  	if (unlikely(!skb))
-@@ -3673,11 +3679,10 @@ static void __ieee80211_xmit_fast(struct
+@@ -3680,11 +3686,10 @@ static void __ieee80211_xmit_fast(struct
  					  ENCRYPT_NO)))
  		goto free;
  
@@ -786,7 +786,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	info = IEEE80211_SKB_CB(skb);
  	memset(info, 0, sizeof(*info));
-@@ -3696,7 +3701,8 @@ static void __ieee80211_xmit_fast(struct
+@@ -3703,7 +3708,8 @@ static void __ieee80211_xmit_fast(struct
  #endif
  
  	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
@@ -796,7 +796,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		*ieee80211_get_qos_ctl(hdr) = tid;
  	}
  
-@@ -3739,6 +3745,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3746,6 +3752,7 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
  	struct tid_ampdu_tx *tid_tx = NULL;
  	struct sk_buff *next;
@@ -804,7 +804,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 tid = IEEE80211_NUM_TIDS;
  
  	/* control port protocol needs a lot of special handling */
-@@ -3764,6 +3771,8 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3771,6 +3778,8 @@ static bool ieee80211_xmit_fast(struct i
  		}
  	}
  
@@ -813,7 +813,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* after this point (skb is modified) we cannot return false */
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
  	if (!skb)
-@@ -3771,7 +3780,8 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3778,7 +3787,8 @@ static bool ieee80211_xmit_fast(struct i
  
  	skb_list_walk_safe(skb, skb, next) {
  		skb_mark_not_on_list(skb);
@@ -823,7 +823,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return true;
-@@ -4260,8 +4270,15 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4270,8 +4280,15 @@ void __ieee80211_subif_start_xmit(struct
  		return;
  	}
  
@@ -839,7 +839,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
  		goto out_free;
  
-@@ -4271,8 +4288,6 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4281,8 +4298,6 @@ void __ieee80211_subif_start_xmit(struct
  	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
  	ieee80211_aggr_check(sdata, sta, skb);
  
