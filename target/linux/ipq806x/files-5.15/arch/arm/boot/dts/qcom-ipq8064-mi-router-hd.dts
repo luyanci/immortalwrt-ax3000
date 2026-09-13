@@ -194,23 +194,7 @@
 	status = "okay";
 };
 
-&hs_phy_0 {
-	status = "okay";
-};
-
-&ss_phy_0 {
-	status = "okay";
-};
-
 &usb3_0 {
-	status = "okay";
-};
-
-&hs_phy_1 {
-	status = "okay";
-};
-
-&ss_phy_1 {
 	status = "okay";
 };
 
@@ -222,7 +206,7 @@
 
 &pcie0 {
 	status = "okay";
-	reset-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
+	reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pcie0_pins>;
 	pinctrl-names = "default";
 
@@ -244,7 +228,7 @@
 
 &pcie1 {
 	status = "okay";
-	reset-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
+	reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pcie1_pins>;
 	pinctrl-names = "default";
 	max-link-speed = <1>;
@@ -268,9 +252,6 @@
 &nand {
 	status = "okay";
 
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
-
 	nand@0 {
 		reg = <0>;
 		compatible = "qcom,nandcs";
@@ -280,7 +261,7 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0xf0000000>;
+		qcom,boot_pages_size = <0xf0000000>;
 
 		partitions {
 			compatible = "fixed-partitions";

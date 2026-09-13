@@ -8,8 +8,7 @@ endef
 define Device/asus_rt-n56u
   SOC := rt3662
   IMAGE_SIZE := 7872k
-  IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | check-size | \
-	mkrtn56uimg -s | append-metadata
+  IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N56U
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
