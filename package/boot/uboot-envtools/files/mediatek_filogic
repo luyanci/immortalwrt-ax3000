@@ -20,6 +20,7 @@ imou,lc-hx3001|\
 jcg,q30|\
 konka,komi-a31|\
 netcore,n60|\
+netcore,n60-pro|\
 nokia,ea0326gmp|\
 qihoo,360t7|\
 tplink,tl-xdr4288|\
@@ -75,7 +76,8 @@ zbtlink,zbt-z8102ax|\
 zbtlink,zbt-z8103ax)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-cmcc,rax3000m)
+cmcc,rax3000m|\
+cmcc,rax3000me)
 	case "$(cmdline_get_var root)" in
 	/dev/mmc*)
 		local envdev=$(find_mmc_part "ubootenv" "mmcblk0")
